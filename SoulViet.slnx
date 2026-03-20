@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/SoulViet.API/SoulViet.API.csproj" />
+    <Project Path="src/SoulViet.Shared.Infrastructure/SoulViet.Shared.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/">
+    <Project Path="src/Modules/SoulViet.Modules.Marketplace/SoulViet.Modules.Marketplace.csproj" />
+    <Project Path="src/Modules/SoulViet.Modules.Social/SoulViet.Modules.Social.csproj" />
+    <Project Path="src/Modules/SoulViet.Modules.SoulMap/SoulViet.Modules.SoulMap.csproj" />
+  </Folder>
+</Solution>
