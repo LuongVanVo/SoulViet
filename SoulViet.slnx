@@ -1,6 +1,7 @@
 <Solution>
   <Folder Name="/src/">
     <Project Path="src/SoulViet.API/SoulViet.API.csproj" />
+    <Project Path="src/SoulViet.Shared.Domain/SoulViet.Shared.Domain.csproj" />
     <Project Path="src/SoulViet.Shared.Infrastructure/SoulViet.Shared.Infrastructure.csproj" />
   </Folder>
   <Folder Name="/src/Modules/">

@@ -27,4 +27,13 @@
     <ProjectReference Include="..\Modules\SoulViet.Modules.Social\SoulViet.Modules.Social.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="..\..\data\SoulViet_DiaDiemDuLich.csv">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="..\..\data\SoulViet_ChoO.csv">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>
