@@ -637,6 +637,50 @@ namespace SoulViet.API.Migrations
                     b.ToTable("TouristAttractions", "soulmap");
                 });
 
+            modelBuilder.Entity("SoulViet.Shared.Domain.Entities.LocalPartnerProfile", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("BusinessName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsAuthenticCertified")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime?>("LastModifiedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("LastModifiedBy")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("PartnerType")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("TaxId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("LocalPartnerProfile");
+                });
+
             modelBuilder.Entity("SoulViet.Shared.Domain.Entities.Permission", b =>
                 {
                     b.Property<Guid>("Id")
@@ -653,7 +697,7 @@ namespace SoulViet.API.Migrations
                     b.HasIndex("Name")
                         .IsUnique();
 
-                    b.ToTable("Permissions", (string)null);
+                    b.ToTable("Permissions", "public");
                 });
 
             modelBuilder.Entity("SoulViet.Shared.Domain.Entities.Role", b =>
@@ -672,7 +716,24 @@ namespace SoulViet.API.Migrations
                     b.HasIndex("Name")
                         .IsUnique();
 
-                    b.ToTable("Roles", (string)null);
+                    b.ToTable("Roles", "public");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("d9224bba-bd7d-4ee5-b958-9ae075e29784"),
+                            Name = "Tourist"
+                        },
+                        new
+                        {
+                            Id = new Guid("a5ce151e-760f-44bb-a405-da38021917fc"),
+                            Name = "LocalPartner"
+                        },
+                        new
+                        {
+                            Id = new Guid("d462852e-f2be-4eaa-88a5-cb0088db17f8"),
+                            Name = "Admin"
+                        });
                 });
 
             modelBuilder.Entity("SoulViet.Shared.Domain.Entities.RolePermission", b =>
@@ -687,7 +748,53 @@ namespace SoulViet.API.Migrations
 
                     b.HasIndex("PermissionId");
 
-                    b.ToTable("RolePermissions", (string)null);
+                    b.ToTable("RolePermissions", "public");
+                });
+
+            modelBuilder.Entity("SoulViet.Shared.Domain.Entities.TourGuideDetail", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<double>("AverageRating")
+                        .HasColumnType("double precision");
+
+                    b.PrimitiveCollection<string>("CoverageProvinces")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<int>("ExperienceYears")
+                        .HasColumnType("integer");
+
+                    b.PrimitiveCollection<string>("Languages")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<string>("LicenseNumber")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<Guid>("LocalPartnerProfileId")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("PricePerDay")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("PricePerHour")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.PrimitiveCollection<string>("Specialties")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LocalPartnerProfileId")
+                        .IsUnique();
+
+                    b.ToTable("TourGuideDetails", "public");
                 });
 
             modelBuilder.Entity("SoulViet.Shared.Domain.Entities.User", b =>
@@ -696,16 +803,28 @@ namespace SoulViet.API.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<string>("Address")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
                     b.Property<string>("AvatarUrl")
                         .IsRequired()
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("CreatedBy")
                         .HasColumnType("text");
+
+                    b.Property<DateTime?>("DateOfBirth")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Email")
                         .IsRequired()
@@ -717,6 +836,25 @@ namespace SoulViet.API.Migrations
                         .HasMaxLength(150)
                         .HasColumnType("character varying(150)");
 
+                    b.Property<string>("Gender")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true);
+
+                    b.Property<bool>("IsEmailConfirmed")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
+                    b.Property<bool>("IsGoogleAccount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
                     b.Property<DateTime?>("LastModifiedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -727,17 +865,27 @@ namespace SoulViet.API.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("PhoneNumber")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
                     b.Property<int>("SoulCoinBalance")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
                         .HasDefaultValue(0);
+
+                    b.Property<string>("VerficationToken")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("VerficationTokenExpiry")
+                        .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
 
                     b.HasIndex("Email")
                         .IsUnique();
 
-                    b.ToTable("Users", (string)null);
+                    b.ToTable("Users", "public");
                 });
 
             modelBuilder.Entity("SoulViet.Shared.Domain.Entities.UserRole", b =>
@@ -752,7 +900,7 @@ namespace SoulViet.API.Migrations
 
                     b.HasIndex("RoleId");
 
-                    b.ToTable("UserRoles", (string)null);
+                    b.ToTable("UserRoles", "public");
                 });
 
             modelBuilder.Entity("SoulViet.Shared.Domain.Entities.UserSession", b =>
@@ -779,6 +927,13 @@ namespace SoulViet.API.Migrations
                         .HasColumnType("boolean")
                         .HasDefaultValue(false);
 
+                    b.Property<bool>("IsUsed")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("JwtId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<string>("RefreshToken")
                         .IsRequired()
                         .HasMaxLength(500)
@@ -794,7 +949,7 @@ namespace SoulViet.API.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("UserSessions", (string)null);
+                    b.ToTable("UserSessions", "public");
                 });
 
             modelBuilder.Entity("SoulViet.Modules.Marketplace.Marketplace.Domain.Entities.MarketProduct", b =>
@@ -962,6 +1117,17 @@ namespace SoulViet.API.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("SoulViet.Shared.Domain.Entities.TourGuideDetail", b =>
+                {
+                    b.HasOne("SoulViet.Shared.Domain.Entities.LocalPartnerProfile", "LocalPartnerProfile")
+                        .WithOne("TourGuideDetail")
+                        .HasForeignKey("SoulViet.Shared.Domain.Entities.TourGuideDetail", "LocalPartnerProfileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("LocalPartnerProfile");
+                });
+
             modelBuilder.Entity("SoulViet.Shared.Domain.Entities.UserRole", b =>
                 {
                     b.HasOne("SoulViet.Shared.Domain.Entities.Role", "Role")
@@ -995,6 +1161,11 @@ namespace SoulViet.API.Migrations
                     b.Navigation("Comments");
 
                     b.Navigation("Likes");
+                });
+
+            modelBuilder.Entity("SoulViet.Shared.Domain.Entities.LocalPartnerProfile", b =>
+                {
+                    b.Navigation("TourGuideDetail");
                 });
 
             modelBuilder.Entity("SoulViet.Shared.Domain.Entities.Role", b =>

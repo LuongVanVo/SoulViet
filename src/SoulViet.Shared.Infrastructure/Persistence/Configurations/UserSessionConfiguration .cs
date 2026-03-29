@@ -8,7 +8,7 @@ namespace SoulViet.Shared.Infrastructure.Persistence.Configurations
     {
         public void Configure(EntityTypeBuilder<UserSession> builder)
         {
-            builder.ToTable("UserSessions");
+            builder.ToTable("UserSessions", "public");
             builder.HasKey(x => x.Id);
 
             builder.Property(x => x.UserId).IsRequired();
