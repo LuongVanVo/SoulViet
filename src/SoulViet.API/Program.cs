@@ -10,25 +10,21 @@ using SoulViet.Modules.Marketplace.Marketplace.Infrastructure;
 using SoulViet.Modules.SoulMap.SoulMap.Infrastructure;
 using SoulViet.API;
 using Microsoft.EntityFrameworkCore;
+using SoulViet.API.Middlewares;
 using SoulViet.Modules.SoulMap.SoulMap.Infrastructure.Persistence.Seeder;
+using SoulViet.Shared.Application;
+using Swashbuckle.AspNetCore.Annotations;
 
 // Load Environment Variable
 Env.TraversePath().Load();
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Configuration.AddEnvironmentVariables();
+builder.Services.AddApplicationServices();
 
 // Get configuration from env
-var rawDbConn = builder.Configuration.GetConnectionString("DefaultConnection");
-
-var dbConn = rawDbConn!
-    .Replace("%DB_HOST%", Environment.GetEnvironmentVariable("DB_HOST"))
-    .Replace("%DB_PORT%", Environment.GetEnvironmentVariable("DB_PORT"))
-    .Replace("%DB_NAME%", Environment.GetEnvironmentVariable("DB_NAME"))
-    .Replace("%DB_USER%", Environment.GetEnvironmentVariable("DB_USER"))
-    .Replace("%DB_PASSWORD%", Environment.GetEnvironmentVariable("DB_PASSWORD"));
-
-var redisConn = Environment.ExpandEnvironmentVariables(builder.Configuration["Redis:ConnectionString"] ?? "127.0.0.1:6381");
+var rawDbConn = builder.Configuration.GetConnectionString("DefaultConnection" ) ?? Environment.GetEnvironmentVariable("DB_CONNECTION_STRING");
+var dbConn = Environment.ExpandEnvironmentVariables(rawDbConn ?? string.Empty);
 
 var rmqHost = Environment.ExpandEnvironmentVariables(builder.Configuration["RabbitMQ:HostName"] ?? "localhost");
 var rmqUser = Environment.ExpandEnvironmentVariables(builder.Configuration["RabbitMQ:UserName"] ?? "admin");
@@ -36,8 +32,19 @@ var rmqPass = Environment.ExpandEnvironmentVariables(builder.Configuration["Rabb
 var rmqConn = $"amqp://{rmqUser}:{rmqPass}@{rmqHost}:5672";
 
 // Register services
+builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(options =>
+{
+    options.EnableAnnotations();
+});
+
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
+    options.AddPolicy("LocalPartnerOnly", policy => policy.RequireRole("LocalPartner"));
+    options.AddPolicy("TouristOnly", policy => policy.RequireRole("Tourist"));
+});
 
 // --- REGISTER DEPENDENCY INJECTION MODULES  ---
 builder.Services.AddSharedInfrastructure(builder.Configuration);
@@ -53,7 +60,7 @@ builder.Services.AddDbContext<AppMigrationDbContext>(options =>
 // Health check api
 builder.Services.AddHealthChecks()
     .AddNpgSql(dbConn, name: "PostgreSQL Database")
-    .AddRedis(redisConn, name: "Redis Cache")
+    .AddRedis(Environment.ExpandEnvironmentVariables(builder.Configuration["Redis:ConnectionString"] ?? "127.0.0.1:6381"), name: "Redis Cache")
     .AddRabbitMQ(sp => {
         var factory = new ConnectionFactory { Uri = new Uri(rmqConn) };
         return factory.CreateConnectionAsync();
@@ -62,11 +69,14 @@ builder.Services.AddHealthChecks()
 var app = builder.Build();
 
 // Middleware
+app.UseMiddleware<GlobalExceptionMiddleware>();
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
 
 app.UseHttpsRedirection();
 
@@ -128,6 +138,10 @@ using (var scope = app.Services.CreateScope())
         logger.LogError(ex, "An error occurred while seeding the database.");
     }
 }
+
+app.MapControllers();
+app.UseAuthentication();
+app.UseAuthorization();
 
 var backendUrl = Environment.GetEnvironmentVariable("BACKEND_URL");
 app.Run(backendUrl);

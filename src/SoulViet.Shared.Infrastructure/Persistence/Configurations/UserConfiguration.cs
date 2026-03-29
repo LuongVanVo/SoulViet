@@ -8,7 +8,7 @@ namespace SoulViet.Shared.Infrastructure.Persistence.Configurations
     {
         public void Configure(EntityTypeBuilder<User> builder)
         {
-            builder.ToTable("Users");
+            builder.ToTable("Users", "public");
 
             // Primary key
             builder.HasKey(x => x.Id);
@@ -22,6 +22,16 @@ namespace SoulViet.Shared.Infrastructure.Persistence.Configurations
             builder.Property(x => x.AvatarUrl).IsRequired().HasMaxLength(1000);
 
             builder.Property(x => x.SoulCoinBalance).HasDefaultValue(0);
+
+            builder.Property(x => x.PhoneNumber).HasMaxLength(20);
+            builder.Property(x => x.Address).HasMaxLength(500);
+            builder.Property(x => x.Gender).HasMaxLength(50);
+
+            builder.Property(x => x.IsActive).HasDefaultValue(true);
+            builder.Property(x => x.IsEmailConfirmed).HasDefaultValue(false);
+            builder.Property(x => x.IsGoogleAccount).HasDefaultValue(false);
+
+            builder.Property(x => x.ConcurrencyStamp).IsConcurrencyToken();
 
             builder.Property(x => x.CreatedAt).IsRequired();
 
