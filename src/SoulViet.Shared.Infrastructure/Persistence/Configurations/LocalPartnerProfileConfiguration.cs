@@ -8,7 +8,7 @@ namespace SoulViet.Shared.Infrastructure.Persistence.Configurations
     {
         public void Configure(EntityTypeBuilder<LocalPartnerProfile> builder)
         {
-            builder.ToTable("LocalPartnerProfiles");
+            builder.ToTable("LocalPartnerProfiles", "public");
             builder.HasKey(x => x.Id);
 
             builder.Property(x => x.UserId).IsRequired();
@@ -20,9 +20,16 @@ namespace SoulViet.Shared.Infrastructure.Persistence.Configurations
 
             builder.Property(x => x.IsAuthenticCertified).HasDefaultValue(false);
 
+            builder.Property(x => x.PartnerType).HasConversion<int>().IsRequired();
+
             builder.HasOne<User>()
                 .WithOne()
                 .HasForeignKey<LocalPartnerProfile>(x => x.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.HasOne(x => x.TourGuideDetail)
+                .WithOne(t => t.LocalPartnerProfile)
+                .HasForeignKey<TourGuideDetail>(t => t.LocalPartnerProfileId)
                 .OnDelete(DeleteBehavior.Cascade);
         }
     }

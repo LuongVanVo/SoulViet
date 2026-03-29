@@ -8,7 +8,7 @@ namespace SoulViet.Shared.Infrastructure.Persistence.Configurations
     {
         public void Configure(EntityTypeBuilder<RolePermission> builder)
         {
-            builder.ToTable("RolePermissions");
+            builder.ToTable("RolePermissions", "public");
 
             // Composite primary key
             builder.HasKey(rp => new { rp.RoleId, rp.PermissionId });
