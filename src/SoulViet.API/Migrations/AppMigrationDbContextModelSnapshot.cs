@@ -31,6 +31,9 @@ namespace SoulViet.API.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<Guid>("CategoryId")
+                        .HasColumnType("uuid");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -41,6 +44,16 @@ namespace SoulViet.API.Migrations
                         .IsRequired()
                         .HasMaxLength(4000)
                         .HasColumnType("character varying(4000)");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true);
+
+                    b.Property<bool>("IsVerifiedByAdmin")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
 
                     b.Property<DateTime?>("LastModifiedAt")
                         .HasColumnType("timestamp with time zone");
@@ -62,6 +75,9 @@ namespace SoulViet.API.Migrations
                     b.Property<int>("ProductType")
                         .HasColumnType("integer");
 
+                    b.Property<decimal?>("PromotionalPrice")
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<int>("Stock")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
@@ -69,9 +85,55 @@ namespace SoulViet.API.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CategoryId");
+
                     b.HasIndex("PartnerId");
 
                     b.ToTable("MarketProducts", "marketplace");
+                });
+
+            modelBuilder.Entity("SoulViet.Modules.Marketplace.Marketplace.Domain.Entities.MasterOrder", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("text");
+
+                    b.Property<decimal>("GrandTotal")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime?>("LastModifiedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("LastModifiedBy")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("PaymentDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("PaymentMethod")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("PaymentStatus")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("TransactionId")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("MasterOrders", "marketplace");
                 });
 
             modelBuilder.Entity("SoulViet.Modules.Marketplace.Marketplace.Domain.Entities.Order", b =>
@@ -97,19 +159,16 @@ namespace SoulViet.API.Migrations
                     b.Property<DateTime?>("LastModifiedBy")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<Guid>("MasterOrderId")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("OrderNotes")
                         .IsRequired()
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)");
 
-                    b.Property<DateTime?>("PaymentDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("PaymentMethod")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("PaymentStatus")
-                        .HasColumnType("integer");
+                    b.Property<Guid>("PartnerId")
+                        .HasColumnType("uuid");
 
                     b.Property<string>("ReceiverName")
                         .IsRequired()
@@ -135,14 +194,14 @@ namespace SoulViet.API.Migrations
                     b.Property<decimal>("TotalAmount")
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<string>("TransactionId")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
                     b.Property<Guid>("UserId")
                         .HasColumnType("uuid");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("MasterOrderId");
+
+                    b.HasIndex("PartnerId");
 
                     b.HasIndex("SettlementId");
 
@@ -166,6 +225,9 @@ namespace SoulViet.API.Migrations
                     b.Property<string>("CreatedBy")
                         .HasColumnType("text");
 
+                    b.Property<string>("ItemMetadata")
+                        .HasColumnType("jsonb");
+
                     b.Property<DateTime?>("LastModifiedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -173,6 +235,9 @@ namespace SoulViet.API.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<Guid>("OrderId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("OrderId1")
                         .HasColumnType("uuid");
 
                     b.Property<decimal>("PartnerEarnings")
@@ -203,6 +268,8 @@ namespace SoulViet.API.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("OrderId");
+
+                    b.HasIndex("OrderId1");
 
                     b.ToTable("OrderItems", "marketplace");
                 });
@@ -845,6 +912,9 @@ namespace SoulViet.API.Migrations
                         .HasColumnType("boolean")
                         .HasDefaultValue(true);
 
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
                     b.Property<bool>("IsEmailConfirmed")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
@@ -983,6 +1053,17 @@ namespace SoulViet.API.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("SoulViet.Modules.Marketplace.Marketplace.Domain.Entities.Order", b =>
+                {
+                    b.HasOne("SoulViet.Modules.Marketplace.Marketplace.Domain.Entities.MasterOrder", "MasterOrder")
+                        .WithMany("VendorOrders")
+                        .HasForeignKey("MasterOrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("MasterOrder");
+                });
+
             modelBuilder.Entity("SoulViet.Modules.Marketplace.Marketplace.Domain.Entities.OrderItem", b =>
                 {
                     b.HasOne("SoulViet.Modules.Marketplace.Marketplace.Domain.Entities.Order", "Order")
@@ -990,6 +1071,10 @@ namespace SoulViet.API.Migrations
                         .HasForeignKey("OrderId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.HasOne("SoulViet.Modules.Marketplace.Marketplace.Domain.Entities.Order", null)
+                        .WithMany("OrderItems")
+                        .HasForeignKey("OrderId1");
 
                     b.Navigation("Order");
                 });
@@ -1154,6 +1239,16 @@ namespace SoulViet.API.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("SoulViet.Modules.Marketplace.Marketplace.Domain.Entities.MasterOrder", b =>
+                {
+                    b.Navigation("VendorOrders");
+                });
+
+            modelBuilder.Entity("SoulViet.Modules.Marketplace.Marketplace.Domain.Entities.Order", b =>
+                {
+                    b.Navigation("OrderItems");
                 });
 
             modelBuilder.Entity("SoulViet.Modules.Social.Social.Domain.Entities.Post", b =>
