@@ -16,6 +16,7 @@ namespace SoulViet.Shared.Domain.Entities
         public string? Gender { get; set; } = string.Empty;
 
         public bool IsActive { get; set; } = true;
+        public bool IsDeleted { get; set; } = false;
         public bool IsEmailConfirmed { get; set; } = false;
         public bool IsGoogleAccount { get; set; } = false;
         public string? VerficationToken { get; set; } = string.Empty;
