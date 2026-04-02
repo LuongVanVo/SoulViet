@@ -20,6 +20,8 @@ namespace SoulViet.Modules.Marketplace.Marketplace.Infrastructure.Persistence.Co
 
             builder.Property(x => x.Quantity).IsRequired();
 
+            builder.Property(x => x.ItemMetadata).HasColumnType("jsonb"); // Lưu metadata dưới dạng JSONB
+
             // Tiền tệ và tính toán
             builder.Property(x => x.UnitPrice).HasColumnType("decimal(18,2)").IsRequired();
             builder.Property(x => x.CommissionRate).HasColumnType("decimal(5,2)").IsRequired();

@@ -12,15 +12,22 @@ namespace SoulViet.Modules.Marketplace.Marketplace.Infrastructure.Persistence.Co
             builder.HasKey(x => x.Id);
 
             builder.Property(x => x.PartnerId).IsRequired();
+            builder.Property(x => x.CategoryId).IsRequired();
+
             builder.HasIndex(x => x.PartnerId);
+            builder.HasIndex(x => x.CategoryId);
 
             builder.Property(x => x.Name).IsRequired().HasMaxLength(255);
             builder.Property(x => x.Description).HasMaxLength(4000);
 
             // Precision for Currency
             builder.Property(x => x.Price).HasColumnType("decimal(18,2)").IsRequired();
+            builder.Property(x => x.PromotionalPrice).HasColumnType("decimal(18,2)");
 
             builder.Property(x => x.Stock).IsRequired().HasDefaultValue(0);
+
+            builder.Property(x => x.IsActive).HasDefaultValue(true);
+            builder.Property(x => x.IsVerifiedByAdmin).HasDefaultValue(false);
 
             // Enum 
             builder.Property(x => x.ProductType).HasConversion<int>().IsRequired();
