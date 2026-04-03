@@ -165,14 +165,8 @@ namespace SoulViet.API.Migrations
                     b.Property<DateTime?>("LastModifiedBy")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<DateTime?>("PaymentDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("PaymentMethod")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("PaymentStatus")
-                        .HasColumnType("integer");
+                    b.Property<Guid>("PartnerId")
+                        .HasColumnType("uuid");
 
                     b.Property<string>("TransactionId")
                         .HasMaxLength(100)
@@ -289,6 +283,9 @@ namespace SoulViet.API.Migrations
                     b.Property<Guid>("OrderId")
                         .HasColumnType("uuid");
 
+                    b.Property<Guid?>("OrderId1")
+                        .HasColumnType("uuid");
+
                     b.Property<decimal>("PartnerEarnings")
                         .HasColumnType("decimal(18,2)");
 
@@ -317,6 +314,8 @@ namespace SoulViet.API.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("OrderId");
+
+                    b.HasIndex("OrderId1");
 
                     b.ToTable("OrderItems", "marketplace");
                 });
@@ -1128,6 +1127,10 @@ namespace SoulViet.API.Migrations
                         .HasForeignKey("OrderId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.HasOne("SoulViet.Modules.Marketplace.Marketplace.Domain.Entities.Order", null)
+                        .WithMany("OrderItems")
+                        .HasForeignKey("OrderId1");
 
                     b.Navigation("Order");
                 });
