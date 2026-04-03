@@ -27,12 +27,6 @@ namespace SoulViet.Modules.Marketplace.Marketplace.Infrastructure.Persistence.Co
             builder.Property(x => x.CommissionRate).HasColumnType("decimal(5,2)").IsRequired();
             builder.Property(x => x.PlatformFee).HasColumnType("decimal(18,2)").IsRequired();
             builder.Property(x => x.PartnerEarnings).HasColumnType("decimal(18,2)").IsRequired();
-
-            // Mối quan hệ với Order
-            builder.HasOne(x => x.Order)
-                .WithMany()
-                .HasForeignKey(x => x.OrderId)
-                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }
