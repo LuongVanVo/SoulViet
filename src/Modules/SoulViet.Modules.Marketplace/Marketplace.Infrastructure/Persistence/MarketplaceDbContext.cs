@@ -10,8 +10,9 @@ namespace SoulViet.Modules.Marketplace.Marketplace.Infrastructure.Persistence
         {
             
         }
-
+        public DbSet<MarketplaceCategory> MarketplaceCategories { get; set; }
         public DbSet<MarketProduct> MarketProducts { get; set; }
+        public DbSet<MasterOrder> MasterOrders { get; set; }
         public DbSet<Order> Orders { get; set; }
         public DbSet<OrderItem> OrderItems { get; set; }
         public DbSet<Settlement> Settlements { get; set; }

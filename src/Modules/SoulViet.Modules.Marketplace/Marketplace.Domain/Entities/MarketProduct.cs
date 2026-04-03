@@ -7,6 +7,7 @@ namespace SoulViet.Modules.Marketplace.Marketplace.Domain.Entities
     {
         public Guid PartnerId { get; set; }
         public Guid CategoryId { get; set; }
+        public MarketplaceCategory MarketplaceCategory { get; set; } = null!;
         public string Name { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
         public decimal Price { get; set; }
