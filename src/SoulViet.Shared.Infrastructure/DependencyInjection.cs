@@ -124,6 +124,7 @@ namespace SoulViet.Shared.Infrastructure
             services.AddScoped<IUserRepository, UserRepository>();
             services.AddScoped<IRoleRepository, RoleRepository>();
             services.AddScoped<IUserSessionRepository, UserSessionRepository>();
+            services.AddScoped<ICloudinaryService, CloudinaryService>();
 
             return services;
         }
