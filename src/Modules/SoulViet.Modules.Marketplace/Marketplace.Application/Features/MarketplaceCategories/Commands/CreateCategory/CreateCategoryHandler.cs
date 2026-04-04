@@ -32,6 +32,10 @@ public class CreateCategoryHandler : IRequestHandler<CreateCategoryCommand, Mark
             category.Slug = $"{category.Slug}-{DateTime.UtcNow.Ticks}";
         }
 
+        // Set auditing fields
+        category.CreatedAt = DateTime.UtcNow;
+        category.CreatedBy = request.CreatedBy.ToString();
+
         await _categoryRepository.AddAsync(category, cancellationToken);
 
         return new MarketplaceCategoryResponse
@@ -49,6 +53,7 @@ public class CreateCategoryHandler : IRequestHandler<CreateCategoryCommand, Mark
     private string GenerateSlug(string phrase)
     {
         string str = RemoveAccent(phrase).ToLower();
+        str = str.Replace("đ", "d").Replace("Đ", "d");
         str = Regex.Replace(str, @"[^a-z0-9\s-]", "");
         str = Regex.Replace(str, @"\s+", "-").Trim();
         return str;
