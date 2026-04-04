@@ -32,4 +32,23 @@ public class MarketplaceCategoryRepository : IMarketplaceCategoryRepository
             .OrderBy(x => x.CategoryType).ThenBy(x => x.Name)
             .ToListAsync(cancellationToken);
     }
+
+    public async Task<MarketplaceCategory?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        return await _dbContext.MarketplaceCategories
+            .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+    }
+
+    public async Task UpdateAsync(MarketplaceCategory category, CancellationToken cancellationToken = default)
+    {
+        _dbContext.MarketplaceCategories.Update(category);
+        await _dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task SoftDeleteAsync(MarketplaceCategory category, CancellationToken cancellationToken = default)
+    {
+        category.IsActive = false;
+        _dbContext.MarketplaceCategories.Update(category);
+        await _dbContext.SaveChangesAsync(cancellationToken);
+    }
 }

@@ -10,4 +10,5 @@ public class CreateCategoryCommand : IRequest<MarketplaceCategoryResponse>
     public string Description { get; set; } = string.Empty;
     public string? ImageUrl { get; set; }
     public ProductType CategoryType { get; set; }
+    public Guid CreatedBy { get; set; }
 }

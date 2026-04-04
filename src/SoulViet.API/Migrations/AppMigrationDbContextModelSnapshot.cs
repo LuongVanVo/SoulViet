@@ -58,8 +58,8 @@ namespace SoulViet.API.Migrations
                     b.Property<DateTime?>("LastModifiedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<DateTime?>("LastModifiedBy")
-                        .HasColumnType("timestamp with time zone");
+                    b.Property<string>("LastModifiedBy")
+                        .HasColumnType("text");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -123,8 +123,8 @@ namespace SoulViet.API.Migrations
                     b.Property<DateTime?>("LastModifiedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<DateTime?>("LastModifiedBy")
-                        .HasColumnType("timestamp with time zone");
+                    b.Property<string>("LastModifiedBy")
+                        .HasColumnType("text");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -162,11 +162,17 @@ namespace SoulViet.API.Migrations
                     b.Property<DateTime?>("LastModifiedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<DateTime?>("LastModifiedBy")
+                    b.Property<string>("LastModifiedBy")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("PaymentDate")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid>("PartnerId")
-                        .HasColumnType("uuid");
+                    b.Property<int>("PaymentMethod")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("PaymentStatus")
+                        .HasColumnType("integer");
 
                     b.Property<string>("TransactionId")
                         .HasMaxLength(100)
@@ -202,8 +208,8 @@ namespace SoulViet.API.Migrations
                     b.Property<DateTime?>("LastModifiedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<DateTime?>("LastModifiedBy")
-                        .HasColumnType("timestamp with time zone");
+                    b.Property<string>("LastModifiedBy")
+                        .HasColumnType("text");
 
                     b.Property<Guid>("MasterOrderId")
                         .HasColumnType("uuid");
@@ -277,13 +283,10 @@ namespace SoulViet.API.Migrations
                     b.Property<DateTime?>("LastModifiedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<DateTime?>("LastModifiedBy")
-                        .HasColumnType("timestamp with time zone");
+                    b.Property<string>("LastModifiedBy")
+                        .HasColumnType("text");
 
                     b.Property<Guid>("OrderId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid?>("OrderId1")
                         .HasColumnType("uuid");
 
                     b.Property<decimal>("PartnerEarnings")
@@ -314,8 +317,6 @@ namespace SoulViet.API.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("OrderId");
-
-                    b.HasIndex("OrderId1");
 
                     b.ToTable("OrderItems", "marketplace");
                 });
@@ -384,8 +385,8 @@ namespace SoulViet.API.Migrations
                     b.Property<DateTime?>("LastModifiedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<DateTime?>("LastModifiedBy")
-                        .HasColumnType("timestamp with time zone");
+                    b.Property<string>("LastModifiedBy")
+                        .HasColumnType("text");
 
                     b.Property<int>("LikesCount")
                         .ValueGeneratedOnAdd()
@@ -430,8 +431,8 @@ namespace SoulViet.API.Migrations
                     b.Property<DateTime?>("LastModifiedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<DateTime?>("LastModifiedBy")
-                        .HasColumnType("timestamp with time zone");
+                    b.Property<string>("LastModifiedBy")
+                        .HasColumnType("text");
 
                     b.Property<Guid>("PostId")
                         .HasColumnType("uuid");
@@ -522,8 +523,8 @@ namespace SoulViet.API.Migrations
                     b.Property<DateTime?>("LastModifiedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<DateTime?>("LastModifiedBy")
-                        .HasColumnType("timestamp with time zone");
+                    b.Property<string>("LastModifiedBy")
+                        .HasColumnType("text");
 
                     b.Property<Point>("Location")
                         .IsRequired()
@@ -685,8 +686,8 @@ namespace SoulViet.API.Migrations
                     b.Property<DateTime?>("LastModifiedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<DateTime?>("LastModifiedBy")
-                        .HasColumnType("timestamp with time zone");
+                    b.Property<string>("LastModifiedBy")
+                        .HasColumnType("text");
 
                     b.Property<Point>("Location")
                         .IsRequired()
@@ -778,8 +779,8 @@ namespace SoulViet.API.Migrations
                     b.Property<DateTime?>("LastModifiedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<DateTime?>("LastModifiedBy")
-                        .HasColumnType("timestamp with time zone");
+                    b.Property<string>("LastModifiedBy")
+                        .HasColumnType("text");
 
                     b.Property<int>("PartnerType")
                         .HasColumnType("integer");
@@ -976,8 +977,8 @@ namespace SoulViet.API.Migrations
                     b.Property<DateTime?>("LastModifiedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<DateTime?>("LastModifiedBy")
-                        .HasColumnType("timestamp with time zone");
+                    b.Property<string>("LastModifiedBy")
+                        .HasColumnType("text");
 
                     b.Property<string>("Password")
                         .IsRequired()
@@ -1127,10 +1128,6 @@ namespace SoulViet.API.Migrations
                         .HasForeignKey("OrderId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.HasOne("SoulViet.Modules.Marketplace.Marketplace.Domain.Entities.Order", null)
-                        .WithMany("OrderItems")
-                        .HasForeignKey("OrderId1");
 
                     b.Navigation("Order");
                 });

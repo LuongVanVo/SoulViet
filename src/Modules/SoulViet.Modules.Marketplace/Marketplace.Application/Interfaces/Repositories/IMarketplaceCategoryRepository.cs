@@ -12,4 +12,13 @@ public interface IMarketplaceCategoryRepository
 
     // Get all categories
     Task<IEnumerable<MarketplaceCategory>> GetAllActiveAsync(CancellationToken cancellationToken = default);
+
+    // Get category by id
+    Task<MarketplaceCategory?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
+
+    // Update category
+    Task UpdateAsync(MarketplaceCategory category, CancellationToken cancellationToken = default);
+
+    // Soft delete category
+    Task SoftDeleteAsync(MarketplaceCategory category, CancellationToken cancellationToken = default);
 }
