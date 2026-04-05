@@ -13,11 +13,14 @@ namespace SoulViet.Modules.Marketplace.Marketplace.Domain.Entities
         public decimal Price { get; set; }
         public decimal? PromotionalPrice { get; set; } // Giá khuyến mãi
         public int Stock { get; set; }
+        public Guid? ProvinceId { get; set; }
+        public string? ProvinceName { get; set; } = string.Empty;
         public ProductType ProductType { get; set; }
 
         // Thông tin media liên quan đến sản phẩm
         public bool IsActive { get; set; } = true;
         public bool IsVerifiedByAdmin { get; set; } = false;
+        public bool IsDeleted { get; set; } = false;
         public ProductMediaInfo Media { get; set; } = new();
     }
 }

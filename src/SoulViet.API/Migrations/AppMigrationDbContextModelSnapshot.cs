@@ -50,6 +50,9 @@ namespace SoulViet.API.Migrations
                         .HasColumnType("boolean")
                         .HasDefaultValue(true);
 
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
                     b.Property<bool>("IsVerifiedByAdmin")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
@@ -77,6 +80,12 @@ namespace SoulViet.API.Migrations
 
                     b.Property<decimal?>("PromotionalPrice")
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<Guid?>("ProvinceId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ProvinceName")
+                        .HasColumnType("text");
 
                     b.Property<int>("Stock")
                         .ValueGeneratedOnAdd()
