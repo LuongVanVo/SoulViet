@@ -48,27 +48,26 @@ Tất cả cấu hình Database nằm ở `AppMigrationDbContext` trong project 
 ### 2.1. Tạo Migration mới
 Mỗi khi bạn thêm/sửa/xóa class Entity trong các Module (Marketplace, Social, SoulMap...), chạy lệnh sau (thay `TenMigration`):
 ```bash
-dotnet ef migrations add <TenMigration> --project src/SoulViet.API/SoulViet.API.csproj -o Migrations
+dotnet ef migrations add <TenMigration> --context AppMigrationDbContext --project src/SoulViet.API --startup-project src/SoulViet.API
 ```
 
 ### 2.2. Áp dụng sửa đổi xuống Database
 ```bash
-dotnet ef database update --project src/SoulViet.API/SoulViet.API.csproj
+dotnet ef database update --context AppMigrationDbContext --project src/SoulViet.API --startup-project src/SoulViet.API
 ```
 
 ### 2.3. Hủy bỏ Migration vừa tạo (Chưa update DB)
 Nếu gõ sai, hoặc file entity bị dính lỗi, cần xóa migration cuối cùng:
 ```bash
-dotnet ef migrations remove --project src/SoulViet.API/SoulViet.API.csproj
+dotnet ef migrations remove --context AppMigrationDbContext --project src/SoulViet.API --startup-project src/SoulViet.API                
 ```
 
 ### 2.4. Xóa trắng Database (Nguy hiểm)
 Dùng khi database gặp lỗi khó sửa và muốn khởi tạo lại toàn bộ cấu trúc:
 ```bash
-dotnet ef database drop --project src/SoulViet.API/SoulViet.API.csproj
+dotnet ef database drop --context AppMigrationDbContext --project src/SoulViet.API --startup-project src/SoulViet.API
 ```
 *(Hệ thống sẽ hỏi bạn chắc chắn muốn Drop không, gõ `y` để đồng ý).*
-
 ---
 
 ## 3. 📦 Quản lý Nuget & Project Reference
