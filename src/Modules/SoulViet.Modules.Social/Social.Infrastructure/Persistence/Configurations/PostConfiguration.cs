@@ -25,6 +25,11 @@ namespace SoulViet.Modules.Social.Social.Infrastructure.Persistence.Configuratio
 
             builder.Property(x => x.LikesCount).HasDefaultValue(0);
             builder.Property(x => x.CommentsCount).HasDefaultValue(0);
+            builder.Property(x => x.SharesCount).HasDefaultValue(0);
+
+            builder.Property(x => x.Status)
+                .HasConversion<int>()
+                .IsRequired();
         }
     }
 }
