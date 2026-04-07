@@ -23,7 +23,7 @@ builder.Configuration.AddEnvironmentVariables();
 builder.Services.AddApplicationServices();
 
 // Get configuration from env
-var rawDbConn = builder.Configuration.GetConnectionString("DefaultConnection" ) ?? Environment.GetEnvironmentVariable("DB_CONNECTION_STRING");
+var rawDbConn = builder.Configuration.GetConnectionString("DefaultConnection") ?? Environment.GetEnvironmentVariable("DB_CONNECTION_STRING");
 var dbConn = Environment.ExpandEnvironmentVariables(rawDbConn ?? string.Empty);
 
 var rmqHost = Environment.ExpandEnvironmentVariables(builder.Configuration["RabbitMQ:HostName"] ?? "localhost");
@@ -61,7 +61,8 @@ builder.Services.AddDbContext<AppMigrationDbContext>(options =>
 builder.Services.AddHealthChecks()
     .AddNpgSql(dbConn, name: "PostgreSQL Database")
     .AddRedis(Environment.ExpandEnvironmentVariables(builder.Configuration["Redis:ConnectionString"] ?? "127.0.0.1:6381"), name: "Redis Cache")
-    .AddRabbitMQ(sp => {
+    .AddRabbitMQ(sp =>
+    {
         var factory = new ConnectionFactory { Uri = new Uri(rmqConn) };
         return factory.CreateConnectionAsync();
     }, name: "RabbitMQ Message Broker");
@@ -97,7 +98,7 @@ app.MapHealthChecks("/api/health", new HealthCheckOptions
         context.Response.ContentType = "application/json";
         var response = new
         {
-            Status = report.Status.ToString(), 
+            Status = report.Status.ToString(),
             TotalDuration = report.TotalDuration.ToString(),
             Components = report.Entries.Select(e => new
             {
@@ -131,7 +132,7 @@ using (var scope = app.Services.CreateScope())
         // await soulMapSeeder.SeedDataAsync(touristPath, accommodationPath);
 
         logger.LogInformation("Database migration and seeding completed successfully.");
-    } 
+    }
     catch (Exception ex)
     {
         var logger = services.GetRequiredService<ILogger<Program>>();
@@ -144,4 +145,12 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 var backendUrl = Environment.GetEnvironmentVariable("BACKEND_URL");
-app.Run(backendUrl);
+
+if (app.Environment.IsDevelopment() || string.IsNullOrWhiteSpace(backendUrl))
+{
+    app.Run();
+}
+else
+{
+    app.Run(backendUrl);
+}

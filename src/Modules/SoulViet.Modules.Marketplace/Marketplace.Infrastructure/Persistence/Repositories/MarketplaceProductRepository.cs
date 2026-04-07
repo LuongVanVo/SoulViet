@@ -154,4 +154,17 @@ public class MarketplaceProductRepository : IMarketplaceProductRepository
 
         return (items, totalCount);
     }
+
+    public async Task<IEnumerable<MarketProduct>> GetByIdsAsync(IEnumerable<Guid> ids, CancellationToken cancellationToken = default)
+    {
+        if (ids == null || !ids.Any())
+        {
+            return new List<MarketProduct>();
+        }
+
+        return await _dbContext.MarketProducts // Ensure this matches your DbSet name in MarketplaceDbContext
+            .Include(p => p.Media)             // Include Media to avoid null reference on MainImage
+            .Where(p => ids.Contains(p.Id))
+            .ToListAsync(cancellationToken);
+    }
 }

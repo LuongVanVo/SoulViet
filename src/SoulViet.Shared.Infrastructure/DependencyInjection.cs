@@ -3,9 +3,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
-using RTools_NTS.Util;
 using SoulViet.Shared.Application.Common.ExternalSettings;
 using SoulViet.Shared.Application.Interfaces;
 using SoulViet.Shared.Application.Interfaces.Repositories;
@@ -126,7 +124,10 @@ namespace SoulViet.Shared.Infrastructure
             services.AddScoped<IUserSessionRepository, UserSessionRepository>();
             services.AddScoped<ICloudinaryService, CloudinaryService>();
 
+            services.AddSingleton<IBackgroundTaskQueue>(ctx => new BackgroundTaskQueue(capacity: 200));
+            services.AddHostedService<QueuedHostedService>();
+
             return services;
-        }
+        } 
     }
 }

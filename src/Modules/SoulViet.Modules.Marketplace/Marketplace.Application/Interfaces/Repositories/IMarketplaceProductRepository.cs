@@ -36,4 +36,6 @@ public interface IMarketplaceProductRepository
         int pageNumber,
         int pageSize,
         CancellationToken cancellationToken = default);
+    Task<IEnumerable<MarketProduct>> GetByIdsAsync(IEnumerable<Guid> ids, CancellationToken cancellationToken = default);
+
 }
