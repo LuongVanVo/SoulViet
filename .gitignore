@@ -129,6 +129,7 @@ coverage/
 *.tmp
 *.temp
 ~$*
+*.lscache
 
 // keys folder to store RSA keys
 keys/

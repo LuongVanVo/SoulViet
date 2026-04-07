@@ -25,6 +25,74 @@ namespace SoulViet.API.Migrations
             NpgsqlModelBuilderExtensions.HasPostgresExtension(modelBuilder, "postgis");
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("SoulViet.Modules.Marketplace.Marketplace.Domain.Entities.Cart", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("LastModifiedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("LastModifiedBy")
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId")
+                        .IsUnique();
+
+                    b.ToTable("Carts", "marketplace");
+                });
+
+            modelBuilder.Entity("SoulViet.Modules.Marketplace.Marketplace.Domain.Entities.CartItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("CartId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("text");
+
+                    b.Property<string>("ItemMetadata")
+                        .HasColumnType("jsonb");
+
+                    b.Property<DateTime?>("LastModifiedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("LastModifiedBy")
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("MarketplaceProductId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CartId");
+
+                    b.HasIndex("MarketplaceProductId");
+
+                    b.ToTable("CartItems", "marketplace");
+                });
+
             modelBuilder.Entity("SoulViet.Modules.Marketplace.Marketplace.Domain.Entities.MarketProduct", b =>
                 {
                     b.Property<Guid>("Id")
@@ -328,6 +396,59 @@ namespace SoulViet.API.Migrations
                     b.HasIndex("OrderId");
 
                     b.ToTable("OrderItems", "marketplace");
+                });
+
+            modelBuilder.Entity("SoulViet.Modules.Marketplace.Marketplace.Domain.Entities.PaymentTransaction", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("text");
+
+                    b.Property<string>("GatewayResponseCode")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("GatewayTransactionNo")
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
+
+                    b.Property<DateTime?>("LastModifiedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("LastModifiedBy")
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("MasterOrderId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("PaymentMethod")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("PaymentStatus")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("RawPayload")
+                        .HasColumnType("jsonb");
+
+                    b.Property<string>("TransactionRef")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MasterOrderId");
+
+                    b.ToTable("PaymentTransactions", "marketplace");
                 });
 
             modelBuilder.Entity("SoulViet.Modules.Marketplace.Marketplace.Domain.Entities.Settlement", b =>
@@ -1080,6 +1201,25 @@ namespace SoulViet.API.Migrations
                     b.ToTable("UserSessions", "public");
                 });
 
+            modelBuilder.Entity("SoulViet.Modules.Marketplace.Marketplace.Domain.Entities.CartItem", b =>
+                {
+                    b.HasOne("SoulViet.Modules.Marketplace.Marketplace.Domain.Entities.Cart", "Cart")
+                        .WithMany("Items")
+                        .HasForeignKey("CartId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("SoulViet.Modules.Marketplace.Marketplace.Domain.Entities.MarketProduct", "MarketplaceProduct")
+                        .WithMany()
+                        .HasForeignKey("MarketplaceProductId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Cart");
+
+                    b.Navigation("MarketplaceProduct");
+                });
+
             modelBuilder.Entity("SoulViet.Modules.Marketplace.Marketplace.Domain.Entities.MarketProduct", b =>
                 {
                     b.HasOne("SoulViet.Modules.Marketplace.Marketplace.Domain.Entities.MarketplaceCategory", "MarketplaceCategory")
@@ -1139,6 +1279,17 @@ namespace SoulViet.API.Migrations
                         .IsRequired();
 
                     b.Navigation("Order");
+                });
+
+            modelBuilder.Entity("SoulViet.Modules.Marketplace.Marketplace.Domain.Entities.PaymentTransaction", b =>
+                {
+                    b.HasOne("SoulViet.Modules.Marketplace.Marketplace.Domain.Entities.MasterOrder", "MasterOrder")
+                        .WithMany()
+                        .HasForeignKey("MasterOrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("MasterOrder");
                 });
 
             modelBuilder.Entity("SoulViet.Modules.Social.Social.Domain.Entities.PostComment", b =>
@@ -1301,6 +1452,11 @@ namespace SoulViet.API.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("SoulViet.Modules.Marketplace.Marketplace.Domain.Entities.Cart", b =>
+                {
+                    b.Navigation("Items");
                 });
 
             modelBuilder.Entity("SoulViet.Modules.Marketplace.Marketplace.Domain.Entities.MarketplaceCategory", b =>

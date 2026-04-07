@@ -1,4 +1,5 @@
 ﻿using System.Text.Json;
+using System.Text.Json.Serialization;
 using Microsoft.Extensions.Caching.Distributed;
 using SoulViet.Shared.Application.Interfaces;
 
@@ -7,9 +8,15 @@ namespace SoulViet.Shared.Infrastructure.Services;
 public class CacheService : ICacheService
 {
     private readonly IDistributedCache _cache;
+    private readonly JsonSerializerOptions _jsonOptions;
     public CacheService(IDistributedCache cache)
     {
         _cache = cache;
+        _jsonOptions = new JsonSerializerOptions
+        {
+            ReferenceHandler = ReferenceHandler.IgnoreCycles,
+            PropertyNameCaseInsensitive = true
+        };
     }
 
     public async Task<T?> GetAsync<T>(string key, CancellationToken cancellationToken = default)
@@ -19,7 +26,7 @@ public class CacheService : ICacheService
         if (string.IsNullOrEmpty(cachedData))
             return default;
 
-        return JsonSerializer.Deserialize<T>(cachedData);
+        return JsonSerializer.Deserialize<T>(cachedData, _jsonOptions);
     }
 
     public async Task SetAsync<T>(string key, T value, TimeSpan? absoluteExpireTime = null, TimeSpan? slidingExpireTime = null,
@@ -35,7 +42,7 @@ public class CacheService : ICacheService
         if (slidingExpireTime.HasValue)
             options.SlidingExpiration = slidingExpireTime;
 
-        var serializedData = JsonSerializer.Serialize(value);
+        var serializedData = JsonSerializer.Serialize(value, _jsonOptions);
 
         await _cache.SetStringAsync(key, serializedData, options, cancellationToken);
     }
