@@ -58,11 +58,6 @@ _ReSharper*/
 **/packages/*
 !**/packages/build/
 
-# Entity Framework Migrations
-**/Migrations/*.Designer.cs
-**/Migrations/*_*.cs
-!**/Migrations/*_InitialCreate.cs
-
 # .NET Core
 project.lock.json
 project.fragment.lock.json
