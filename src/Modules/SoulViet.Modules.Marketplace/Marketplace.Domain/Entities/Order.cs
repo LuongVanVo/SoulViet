@@ -17,6 +17,15 @@ namespace SoulViet.Modules.Marketplace.Marketplace.Domain.Entities
         public string ShippingAddress { get; set; } = string.Empty;
         public string OrderNotes { get; set; } = string.Empty; // Guest note
 
+        public decimal ShippingFee { get; set; }
+        public string? ShippingTrackingCode { get; set; } // Mã vận đơn
+        public DateTime? ExpectedDeliveryOrServiceDate { get; set; } // Ngày dự kiến giao hàng hoặc cung cấp dịch vụ
+
+        public string? CancellationReason { get; set; }
+        public DateTime? CancelledAt { get; set; }
+
+        public string? ShopVoucherCode { get; set; }
+        public decimal ShopDiscountAmount { get; set; }
         public decimal TotalAmount { get; set; } // Tổng tiền của riêng Partner này
 
         // Status & Payment 

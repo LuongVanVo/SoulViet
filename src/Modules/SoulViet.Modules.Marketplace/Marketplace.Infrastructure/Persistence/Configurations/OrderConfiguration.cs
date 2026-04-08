@@ -17,6 +17,7 @@ namespace SoulViet.Modules.Marketplace.Marketplace.Infrastructure.Persistence.Co
 
             builder.HasIndex(x => x.UserId);
             builder.HasIndex(x => x.PartnerId);
+            builder.HasIndex(x => x.MasterOrderId);
             builder.HasIndex(x => x.SettlementId);
 
             builder.Property(x => x.ReceiverName).IsRequired().HasMaxLength(150);
@@ -24,7 +25,13 @@ namespace SoulViet.Modules.Marketplace.Marketplace.Infrastructure.Persistence.Co
             builder.Property(x => x.ShippingAddress).IsRequired().HasMaxLength(500);
             builder.Property(x => x.OrderNotes).HasMaxLength(1000);
 
+            builder.Property(x => x.ShopVoucherCode).HasMaxLength(50);
+            builder.Property(x => x.ShippingTrackingCode).HasMaxLength(150);
+            builder.Property(x => x.CancellationReason).HasMaxLength(1000);
+
             // Precision for Currency
+            builder.Property(x => x.ShippingFee).HasColumnType("decimal(18,2)").IsRequired();
+            builder.Property(x => x.ShopDiscountAmount).HasColumnType("decimal(18,2)").IsRequired();
             builder.Property(x => x.TotalAmount).HasColumnType("decimal(18,2)").IsRequired();
 
             // Enums

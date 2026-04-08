@@ -14,7 +14,12 @@ public class MasterOrderConfiguration : IEntityTypeConfiguration<MasterOrder>
         builder.Property(x => x.UserId).IsRequired();
         builder.HasIndex(x => x.UserId);
 
+        builder.Property(x => x.TotalItemsPrice).HasColumnType("decimal(18,2)").IsRequired();
+        builder.Property(x => x.TotalShippingFee).HasColumnType("decimal(18,2)").IsRequired();
+        builder.Property(x => x.PlatformDiscountAmount).HasColumnType("decimal(18,2)").IsRequired();
         builder.Property(x => x.GrandTotal).HasColumnType("decimal(18,2)").IsRequired();
+
+        builder.Property(x => x.PlatformVoucherCode).HasMaxLength(50);
 
         builder.Property(x => x.PaymentMethod).HasConversion<int>().IsRequired();
         builder.Property(x => x.PaymentStatus).HasConversion<int>().IsRequired();
