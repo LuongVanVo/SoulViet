@@ -7,6 +7,12 @@ namespace SoulViet.Modules.Marketplace.Marketplace.Domain.Entities;
 public class MasterOrder : BaseAuditableEntity
 {
     public Guid UserId { get; set; }
+
+    public decimal TotalItemsPrice { get; set; }
+    public decimal TotalShippingFee { get; set; }
+
+    public string? PlatformVoucherCode { get; set; }
+    public decimal PlatformDiscountAmount { get; set; }
     public decimal GrandTotal { get; set; } // Tổng tiền toàn bộ giỏ
 
     public PaymentMethod PaymentMethod { get; set; } = PaymentMethod.Cod;
