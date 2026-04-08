@@ -8,5 +8,9 @@ namespace SoulViet.Modules.Social.Social.Domain.Entities
         public Guid UserId { get; set; }
         public string Content { get; set; } = string.Empty;
         public Post Post { get; set; } = null!;
+        public Guid? ParentCommentId { get; set; } // nested comment
+        public PostComment? ParentComment { get; set; }
+
+        public ICollection<PostComment> Replies { get; set; } = new List<PostComment>();
     }
 }

@@ -725,7 +725,8 @@ namespace SoulViet.API.Migrations
 
                     b.Property<string>("Content")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -739,6 +740,9 @@ namespace SoulViet.API.Migrations
                     b.Property<string>("LastModifiedBy")
                         .HasColumnType("text");
 
+                    b.Property<Guid?>("ParentCommentId")
+                        .HasColumnType("uuid");
+
                     b.Property<Guid>("PostId")
                         .HasColumnType("uuid");
 
@@ -747,9 +751,13 @@ namespace SoulViet.API.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("ParentCommentId");
+
                     b.HasIndex("PostId");
 
                     b.HasIndex("UserId");
+
+                    b.HasIndex("PostId", "CreatedAt");
 
                     b.ToTable("PostComments", "social");
                 });
@@ -1511,11 +1519,18 @@ namespace SoulViet.API.Migrations
 
             modelBuilder.Entity("SoulViet.Modules.Social.Social.Domain.Entities.PostComment", b =>
                 {
+                    b.HasOne("SoulViet.Modules.Social.Social.Domain.Entities.PostComment", "ParentComment")
+                        .WithMany("Replies")
+                        .HasForeignKey("ParentCommentId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("SoulViet.Modules.Social.Social.Domain.Entities.Post", "Post")
                         .WithMany("Comments")
                         .HasForeignKey("PostId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("ParentComment");
 
                     b.Navigation("Post");
                 });
@@ -1707,6 +1722,11 @@ namespace SoulViet.API.Migrations
                     b.Navigation("Comments");
 
                     b.Navigation("Likes");
+                });
+
+            modelBuilder.Entity("SoulViet.Modules.Social.Social.Domain.Entities.PostComment", b =>
+                {
+                    b.Navigation("Replies");
                 });
 
             modelBuilder.Entity("SoulViet.Shared.Domain.Entities.LocalPartnerProfile", b =>
