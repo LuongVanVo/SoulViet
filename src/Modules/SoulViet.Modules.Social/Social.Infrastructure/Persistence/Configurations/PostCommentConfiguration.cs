@@ -17,13 +17,27 @@ namespace SoulViet.Modules.Social.Social.Infrastructure.Persistence.Configuratio
             builder.Property(x => x.UserId).IsRequired();
             builder.HasIndex(x => x.UserId);
 
-            builder.Property(x => x.Content).IsRequired();
+            builder.Property(x => x.Content)
+                   .IsRequired()
+                   .HasMaxLength(2000);
+
             builder.Property(x => x.CreatedAt).IsRequired();
+
+            builder.Property(x => x.ParentCommentId)
+                   .IsRequired(false);
+
+            builder.HasIndex(x => x.ParentCommentId);
+            builder.HasIndex(x => new { x.PostId, x.CreatedAt });
 
             builder.HasOne(x => x.Post)
                 .WithMany(x => x.Comments)
                 .HasForeignKey(x => x.PostId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            builder.HasOne(pc => pc.ParentComment)
+                .WithMany(pc => pc.Replies)
+                .HasForeignKey(pc => pc.ParentCommentId)
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }
