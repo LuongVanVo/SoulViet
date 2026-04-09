@@ -18,7 +18,6 @@ namespace SoulViet.Modules.Social.Social.Infrastructure.Persistence.Configuratio
 
             builder.Property(x => x.MediaUrls).HasColumnType("text[]");
 
-            // Enum to int
             builder.Property(x => x.VibeTag).HasConversion<int>().IsRequired();
 
             builder.HasIndex(x => x.CheckinLocationId);
@@ -30,6 +29,9 @@ namespace SoulViet.Modules.Social.Social.Infrastructure.Persistence.Configuratio
             builder.Property(x => x.Status)
                 .HasConversion<int>()
                 .IsRequired();
+
+            builder.Property<bool>("IsDeleted").HasDefaultValue(false).IsRequired();
+            builder.HasQueryFilter(x => !EF.Property<bool>(x, "IsDeleted"));
         }
     }
 }
