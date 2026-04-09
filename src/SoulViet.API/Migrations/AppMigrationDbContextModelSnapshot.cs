@@ -1149,7 +1149,7 @@ namespace SoulViet.API.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("LocalPartnerProfile");
+                    b.ToTable("LocalPartnerProfile", (string)null);
                 });
 
             modelBuilder.Entity("SoulViet.Shared.Domain.Entities.Permission", b =>
