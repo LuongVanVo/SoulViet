@@ -1,10 +1,10 @@
-﻿using AutoMapper;
+﻿// GetMyCartHandler.cs
+using AutoMapper;
 using MediatR;
 using SoulViet.Modules.Marketplace.Marketplace.Application.DTOs;
-using SoulViet.Modules.Marketplace.Marketplace.Application.Features.Carts.Queries.GetMyCart;
 using SoulViet.Modules.Marketplace.Marketplace.Application.Interfaces.Repositories;
 
-namespace SoulViet.Modules.Marketplace.Marketplace.Application.Features.Carts.Queries.GetCart;
+namespace SoulViet.Modules.Marketplace.Marketplace.Application.Features.Carts.Queries.GetMyCart;
 
 public class GetCartQueryHandler : IRequestHandler<GetMyCartQuery, CartDto>
 {
@@ -33,7 +33,8 @@ public class GetCartQueryHandler : IRequestHandler<GetMyCartQuery, CartDto>
         var productDict = currentProducts.ToDictionary(p => p.Id);
 
         var cartDto = _mapper.Map<CartDto>(cart);
-        bool needsRedisUpdate = false;
+
+        bool needsRedisUpdate = true;
 
         foreach (var itemDto in cartDto.Items.ToList())
         {
@@ -51,7 +52,6 @@ public class GetCartQueryHandler : IRequestHandler<GetMyCartQuery, CartDto>
 
                     var domainItem = cart.Items.First(i => i.Id == itemDto.Id);
                     domainItem.Quantity = itemDto.Quantity;
-                    needsRedisUpdate = true;
                 }
             }
             else
@@ -60,7 +60,6 @@ public class GetCartQueryHandler : IRequestHandler<GetMyCartQuery, CartDto>
 
                 var domainItem = cart.Items.First(i => i.Id == itemDto.Id);
                 cart.Items.Remove(domainItem);
-                needsRedisUpdate = true;
             }
         }
 
