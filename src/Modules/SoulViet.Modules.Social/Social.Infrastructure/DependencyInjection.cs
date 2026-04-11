@@ -6,6 +6,7 @@ using SoulViet.Modules.Social.Social.Application.Interfaces;
 using SoulViet.Modules.Social.Social.Infrastructure.Persistence.Repositories;
 using System.Reflection;
 using MediatR;
+using SoulViet.Modules.Social.Social.Application.Interfaces.Repositories;
 
 namespace SoulViet.Modules.Social.Social.Infrastructure
 {
@@ -17,6 +18,8 @@ namespace SoulViet.Modules.Social.Social.Infrastructure
 
             services.AddDbContext<SocialDbContext>(options => options.UseNpgsql(dbConnection));
             services.AddScoped<IPostRepository, PostRepository>();
+            services.AddScoped<IPostCommentRepository, PostCommentRepository>();
+            services.AddScoped<IUserService, SoulViet.Modules.Social.Social.Infrastructure.Services.UserService>();
             services.AddScoped<IUnitOfWork, UnitOfWork>();
 
             var assembly = Assembly.GetExecutingAssembly();

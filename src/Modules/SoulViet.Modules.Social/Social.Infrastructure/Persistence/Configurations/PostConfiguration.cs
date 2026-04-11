@@ -30,8 +30,8 @@ namespace SoulViet.Modules.Social.Social.Infrastructure.Persistence.Configuratio
                 .HasConversion<int>()
                 .IsRequired();
 
-            builder.Property<bool>("IsDeleted").HasDefaultValue(false).IsRequired();
-            builder.HasQueryFilter(x => !EF.Property<bool>(x, "IsDeleted"));
+            builder.Property(x => x.IsDeleted).HasDefaultValue(false).IsRequired();
+            builder.HasQueryFilter(x => !x.IsDeleted);
         }
     }
 }

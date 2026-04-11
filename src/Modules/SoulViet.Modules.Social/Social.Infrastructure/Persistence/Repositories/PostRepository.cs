@@ -1,5 +1,5 @@
 using Microsoft.EntityFrameworkCore;
-using SoulViet.Modules.Social.Social.Application.Interfaces;
+using SoulViet.Modules.Social.Social.Application.Interfaces.Repositories;
 using SoulViet.Modules.Social.Social.Domain.Entities;
 
 namespace SoulViet.Modules.Social.Social.Infrastructure.Persistence.Repositories;
@@ -30,7 +30,8 @@ public class PostRepository : IPostRepository
 
     public Task SoftDeleteAsync(Post post, CancellationToken cancellationToken)
     {
-        _dbContext.Entry(post).Property("IsDeleted").CurrentValue = true;
+        post.IsDeleted = true;
+        _dbContext.Posts.Update(post);
         return Task.CompletedTask;
     }
 }

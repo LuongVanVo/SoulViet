@@ -22,6 +22,12 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\SoulViet.Shared.Domain\SoulViet.Shared.Domain.csproj" />
+    <ProjectReference Include="..\..\SoulViet.Shared.Application\SoulViet.Shared.Application.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Social.Application\Common\" />
+    <Folder Include="Social.Application\Features\PostComments\Commands\DeletePostComment\" />
   </ItemGroup>
 
 </Project>
