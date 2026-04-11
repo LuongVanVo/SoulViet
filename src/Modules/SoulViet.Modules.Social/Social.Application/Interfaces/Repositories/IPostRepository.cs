@@ -1,6 +1,6 @@
 using SoulViet.Modules.Social.Social.Domain.Entities;
 
-namespace SoulViet.Modules.Social.Social.Application.Interfaces;
+namespace SoulViet.Modules.Social.Social.Application.Interfaces.Repositories;
 
 public interface IPostRepository
 {

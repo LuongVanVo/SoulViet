@@ -27,6 +27,9 @@ namespace SoulViet.Modules.Social.Social.Infrastructure.Persistence.Configuratio
                 .WithMany()
                 .HasForeignKey(x => x.PostId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Property(x => x.IsDeleted).HasDefaultValue(false).IsRequired();
+            builder.HasQueryFilter(x => !x.IsDeleted);
         }
     }
 }

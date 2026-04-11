@@ -2,6 +2,7 @@ using AutoMapper;
 using MediatR;
 using SoulViet.Modules.Social.Social.Application.Features.Posts.Results;
 using SoulViet.Modules.Social.Social.Application.Interfaces;
+using SoulViet.Modules.Social.Social.Application.Interfaces.Repositories;
 using SoulViet.Modules.Social.Social.Domain.Entities;
 using SoulViet.Shared.Domain.Enums;
 

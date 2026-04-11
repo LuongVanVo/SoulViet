@@ -12,5 +12,6 @@ namespace SoulViet.Modules.Social.Social.Domain.Entities
         public PostComment? ParentComment { get; set; }
 
         public ICollection<PostComment> Replies { get; set; } = new List<PostComment>();
+        public bool IsDeleted { get; set; } = false;
     }
 }

@@ -2,7 +2,7 @@ using AutoMapper;
 using MediatR;
 using SoulViet.Modules.Social.Social.Application.Exceptions;
 using SoulViet.Modules.Social.Social.Application.Features.Posts.Results;
-using SoulViet.Modules.Social.Social.Application.Interfaces;
+using SoulViet.Modules.Social.Social.Application.Interfaces.Repositories;
 
 namespace SoulViet.Modules.Social.Social.Application.Features.Posts.Queries.GetPostById;
 

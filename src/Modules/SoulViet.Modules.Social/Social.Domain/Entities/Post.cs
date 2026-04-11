@@ -18,8 +18,9 @@ namespace SoulViet.Modules.Social.Social.Domain.Entities
         public int SharesCount { get; set; } = 0;
         public PostStatus Status { get; set; } = PostStatus.Draft;
 
-        // Navigation 
         public List<PostComment> Comments { get; set; } = new();
         public List<PostLike> Likes { get; set; } = new();
+
+        public bool IsDeleted { get; set; } = false;
     }
 }

@@ -38,6 +38,9 @@ namespace SoulViet.Modules.Social.Social.Infrastructure.Persistence.Configuratio
                 .WithMany(pc => pc.Replies)
                 .HasForeignKey(pc => pc.ParentCommentId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Property(x => x.IsDeleted).HasDefaultValue(false).IsRequired();
+            builder.HasQueryFilter(x => !x.IsDeleted);
         }
     }
 }
