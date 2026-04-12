@@ -1,4 +1,6 @@
 using System.Reflection;
+using FluentValidation;
+using MediatR;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using SoulViet.Modules.Marketplace.Marketplace.Infrastructure.Persistence;
@@ -6,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using SoulViet.Modules.Marketplace.Marketplace.Application.Interfaces;
 using SoulViet.Modules.Marketplace.Marketplace.Application.Interfaces.Repositories;
 using SoulViet.Modules.Marketplace.Marketplace.Infrastructure.Persistence.Repositories;
+using SoulViet.Shared.Application.Common.Behaviors;
 using StackExchange.Redis;
 
 namespace SoulViet.Modules.Marketplace.Marketplace.Infrastructure
@@ -14,6 +17,8 @@ namespace SoulViet.Modules.Marketplace.Marketplace.Infrastructure
     {
         public static IServiceCollection AddMarketplaceModule(this IServiceCollection services, IConfiguration configuration)
         {
+            var assembly = Assembly.GetExecutingAssembly();
+
             var rawDbConn = configuration.GetConnectionString("DefaultConnection") ?? Environment.GetEnvironmentVariable("DB_CONNECTION_STRING");
             var dbConnection = Environment.ExpandEnvironmentVariables(rawDbConn ?? string.Empty);
 
@@ -37,8 +42,16 @@ namespace SoulViet.Modules.Marketplace.Marketplace.Infrastructure
             services.AddScoped<IMarketplaceCategoryRepository, MarketplaceCategoryRepository>();
             services.AddScoped<IMarketplaceProductRepository, MarketplaceProductRepository>();
             services.AddScoped<ICartRepository, CartRepository>();
+            services.AddScoped<IVoucherRepository, VoucherRepository>();
 
-            services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly()));
+            services.AddValidatorsFromAssembly(assembly);
+
+            services.AddMediatR(cfg =>
+            {
+                cfg.RegisterServicesFromAssembly(assembly);
+
+                cfg.AddOpenBehavior(typeof(ValidationBehavior<,>));
+            });
 
             services.AddAutoMapper(cfg => { }, Assembly.GetExecutingAssembly());
 
