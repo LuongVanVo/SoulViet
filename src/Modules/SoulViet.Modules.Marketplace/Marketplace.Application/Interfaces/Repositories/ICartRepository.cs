@@ -10,4 +10,5 @@ public interface ICartRepository
 
     Task DeleteAsync(Guid userId, CancellationToken cancellationToken = default);
     Task SaveCartAsync(Guid userId, Cart cart, CancellationToken cancellationToken = default);
+    Task<List<CartItem>> GetItemsByIdsAsync(List<Guid> itemIds, Guid userId, CancellationToken cancellationToken = default);
 }
