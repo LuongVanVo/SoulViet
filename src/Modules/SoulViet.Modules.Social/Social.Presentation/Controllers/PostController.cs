@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using SoulViet.Modules.Social.Social.Application.Features.PostComments.Queries.GetPostComments;
 using SoulViet.Modules.Social.Social.Application.Features.Posts.Commands.CreatePost;
 using SoulViet.Modules.Social.Social.Application.Features.Posts.Commands.DeletePost;
 using SoulViet.Modules.Social.Social.Application.Features.Posts.Commands.UpdatePost;
@@ -89,6 +90,32 @@ public class PostController : ControllerBase
         };
 
         var result = await _mediator.Send(command, cancellationToken);
+        return Ok(result);
+    }
+    [HttpGet("{id:guid}/comments")]
+    [AllowAnonymous] // Assuming comments can be publicly read - or remove this based on your authn
+    [SwaggerOperation(
+        Summary = "Get Post Comments (Paginated)",
+        Description = "Retrieves a keyset paginated list of top-level comments for a specific post."
+    )]
+    public async Task<IActionResult> GetPostComments(
+        [FromRoute] Guid id,
+        [FromQuery] string? after,
+        [FromQuery] int first = 20,
+        [FromQuery] string sortBy = "newest",
+        CancellationToken cancellationToken = default)
+    {
+        var query = new GetPostCommentsQuery
+        {
+            PostId = id,
+            After = after,
+            First = first,
+            SortBy = string.IsNullOrWhiteSpace(sortBy) ? "newest" : sortBy.ToLowerInvariant()
+        };
+        var result = await _mediator.Send(query, cancellationToken);
+
+        if (result == null)
+            return NotFound(new { message = "Post not found" });
         return Ok(result);
     }
 }

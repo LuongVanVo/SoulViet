@@ -12,5 +12,14 @@ namespace SoulViet.Modules.Social.Social.Application.Interfaces.Repositories
         Task AddAsync(PostComment comment, CancellationToken cancellationToken);
         void Update(PostComment comment);
         Task Delete(PostComment comment, CancellationToken cancellationToken);
+        Task<(List<PostComment> Items, int TotalCount)> GetPagedAsync(
+            Guid? postId,
+            Guid? parentCommentId,
+            string sortBy,
+            Guid? cursorId,
+            DateTime? cursorTime,
+            int? cursorLikeCount,
+            int limit,
+            CancellationToken cancellationToken);
     }
 }

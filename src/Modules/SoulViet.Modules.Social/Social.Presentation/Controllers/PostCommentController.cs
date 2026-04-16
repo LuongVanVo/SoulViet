@@ -5,6 +5,7 @@ using SoulViet.Modules.Social.Social.Application.Features.PostComments.Commands.
 using SoulViet.Modules.Social.Social.Application.Features.PostComments.Commands.DeletePostComment;
 using SoulViet.Modules.Social.Social.Application.Features.PostComments.Commands.UpdatePostComment;
 using SoulViet.Modules.Social.Social.Application.Features.PostComments.Queries.GetPostCommentById;
+using SoulViet.Modules.Social.Social.Presentation.Helpers;
 using Swashbuckle.AspNetCore.Annotations;
 using System;
 using System.Collections.Generic;
@@ -30,6 +31,7 @@ namespace SoulViet.Modules.Social.Social.Presentation.Controllers
         )]
         public async Task<IActionResult> CreatePostComment([FromBody] CreatePostCommentCommand command, CancellationToken cancellationToken)
         {
+            command.UserId = User.GetCurrentUserId();
             var result = await _mediator.Send(command, cancellationToken);
             if (result.Success)
             {
@@ -60,6 +62,7 @@ namespace SoulViet.Modules.Social.Social.Presentation.Controllers
             {
                 return BadRequest("ID in the route does not match ID in the body.");
             }
+            command.UserId = User.GetCurrentUserId();
             var result = await _mediator.Send(command, cancellationToken);
             if (result.Success)
             {
@@ -74,7 +77,7 @@ namespace SoulViet.Modules.Social.Social.Presentation.Controllers
             )]
         public async Task<IActionResult> DeletePostComment([FromRoute] Guid id, CancellationToken cancellationToken)
         {
-            var command = new DeletePostCommentCommand { Id = id };
+            var command = new DeletePostCommentCommand { Id = id, UserId = User.GetCurrentUserId() };
             var result = await _mediator.Send(command, cancellationToken);
             if (result.Success)
             {
@@ -83,5 +86,35 @@ namespace SoulViet.Modules.Social.Social.Presentation.Controllers
             return BadRequest(result);
 
         }
+
+        [HttpGet("/api/comments/{commentId:guid}/replies")]
+        [AllowAnonymous]
+        [SwaggerOperation(
+            Summary = "Get comment replies (Paginated)",
+            Description = "Retrieves a keyset paginated list of nested replies for a given comment."
+        )]
+        public async Task<IActionResult> GetCommentReplies(
+            [FromRoute] Guid commentId,
+            [FromQuery] string? after,
+            [FromQuery] int first = 20,
+            [FromQuery] string sortBy = "newest",
+            CancellationToken cancellationToken = default)
+        {
+            var query = new SoulViet.Modules.Social.Social.Application.Features.PostComments.Queries.GetCommentReplies.GetCommentRepliesQuery
+            {
+                CommentId = commentId,
+                After = after,
+                First = first,
+                SortBy = string.IsNullOrWhiteSpace(sortBy) ? "newest" : sortBy.ToLowerInvariant()
+            };
+
+            var result = await _mediator.Send(query, cancellationToken);
+
+            if (result == null)
+                return NotFound(new { message = "Parent comment not found" });
+
+            return Ok(result);
+        }
+
     }
 }

@@ -26,7 +26,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Social.Application\Common\" />
+    <Folder Include="Social.Application\Common\Pagination\" />
     <Folder Include="Social.Application\Features\PostComments\Commands\DeletePostComment\" />
   </ItemGroup>
 
