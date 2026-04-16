@@ -27,8 +27,11 @@ public class UnitOfWork : IUnitOfWork
         try
         {
             await SaveChangesAsync(cancellationToken);
+
             if (_transaction != null)
+            {
                 await _transaction.CommitAsync(cancellationToken);
+            }
         }
         catch
         {
@@ -39,7 +42,6 @@ public class UnitOfWork : IUnitOfWork
         {
             if (_transaction != null)
             {
-                await _transaction.RollbackAsync(cancellationToken);
                 await _transaction.DisposeAsync();
                 _transaction = null;
             }
@@ -48,11 +50,24 @@ public class UnitOfWork : IUnitOfWork
 
     public async Task RollbackTransactionAsync(CancellationToken cancellationToken = default)
     {
-        if (_transaction != null)
+        try
         {
-            await _transaction.RollbackAsync(cancellationToken);
-            await _transaction.DisposeAsync();
-            _transaction = null;
+            if (_transaction != null)
+            {
+                await _transaction.RollbackAsync(cancellationToken);
+            }
+        }
+        catch (Exception)
+        {
+
+        }
+        finally
+        {
+            if (_transaction != null)
+            {
+                await _transaction.DisposeAsync();
+                _transaction = null;
+            }
         }
     }
 

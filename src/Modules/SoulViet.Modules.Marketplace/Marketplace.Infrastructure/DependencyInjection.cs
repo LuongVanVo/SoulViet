@@ -43,6 +43,8 @@ namespace SoulViet.Modules.Marketplace.Marketplace.Infrastructure
             services.AddScoped<IMarketplaceProductRepository, MarketplaceProductRepository>();
             services.AddScoped<ICartRepository, CartRepository>();
             services.AddScoped<IVoucherRepository, VoucherRepository>();
+            services.AddScoped<IMasterOrderRepository, MasterOrderRepository>();
+            services.AddScoped<IOrderRepository, OrderRepository>();
 
             services.AddValidatorsFromAssembly(assembly);
 

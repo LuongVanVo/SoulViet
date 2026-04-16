@@ -163,4 +163,12 @@ public class CartRepository : ICartRepository
             _logger.LogError(ex, "Error syncing cart for user {UserId} to PostgreSQL via Background Task", userId);
         }
     }
+
+    public async Task<List<CartItem>> GetItemsByIdsAsync(List<Guid> itemIds, Guid userId, CancellationToken cancellationToken = default)
+    {
+        return await _dbContext.CartItems
+            .Include(ci => ci.MarketplaceProduct)
+            .Where(ci => ci.Cart.UserId == userId && itemIds.Contains(ci.Id))
+            .ToListAsync(cancellationToken);
+    }
 }
