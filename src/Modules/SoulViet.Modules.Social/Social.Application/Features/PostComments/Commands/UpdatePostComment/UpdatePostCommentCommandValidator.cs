@@ -8,7 +8,7 @@ namespace SoulViet.Modules.Social.Social.Application.Features.PostComments.Comma
 {
     public class UpdatePostCommentCommandValidator : AbstractValidator<UpdatePostCommentCommand>
     {
-        UpdatePostCommentCommandValidator() { 
+        public UpdatePostCommentCommandValidator() {
             RuleFor(x => x.Id).NotEmpty().WithMessage("Id is required.");
             RuleFor(x => x.Content).NotEmpty().WithMessage("Content is required.");
         }
