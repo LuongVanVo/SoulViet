@@ -93,7 +93,7 @@ public class PostController : ControllerBase
         return Ok(result);
     }
     [HttpGet("{id:guid}/comments")]
-    [AllowAnonymous] // Assuming comments can be publicly read - or remove this based on your authn
+    [AllowAnonymous] 
     [SwaggerOperation(
         Summary = "Get Post Comments (Paginated)",
         Description = "Retrieves a keyset paginated list of top-level comments for a specific post."
