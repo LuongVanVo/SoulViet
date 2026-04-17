@@ -25,15 +25,21 @@ namespace SoulViet.Modules.Social.Social.Infrastructure
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<IUnitOfWork, UnitOfWork>();
 
-            var assembly = Assembly.GetExecutingAssembly();
-            services.AddAutoMapper(cfg => cfg.AddMaps(assembly));
+            var infrastructureAssembly = Assembly.GetExecutingAssembly();
+            var applicationAssembly = typeof(Social.Application.Features.Posts.Commands.CreatePost.CreatePostCommand).Assembly;
 
-            services.AddValidatorsFromAssembly(assembly);
+            services.AddAutoMapper(cfg => 
+            {
+                cfg.AddMaps(infrastructureAssembly);
+                cfg.AddMaps(applicationAssembly);
+            });
+
+            services.AddValidatorsFromAssembly(applicationAssembly);
 
             services.AddMediatR(cfg =>
             {
-                cfg.RegisterServicesFromAssembly(assembly);
-                cfg.AddOpenBehavior(typeof(ValidationBehavior<,>));
+                cfg.RegisterServicesFromAssembly(applicationAssembly);
+                cfg.AddOpenBehavior(typeof(Social.Application.Common.Behaviors.ValidationBehavior<,>));
             });
             return services;
         }
