@@ -1,4 +1,5 @@
 ﻿using SoulViet.Modules.Marketplace.Marketplace.Domain.Entities;
+using SoulViet.Modules.Marketplace.Marketplace.Domain.Enums;
 
 namespace SoulViet.Modules.Marketplace.Marketplace.Application.Interfaces.Repositories;
 
@@ -10,5 +11,12 @@ public interface IMasterOrderRepository
 
     // Lịch sử mua hàng của Tourist
     Task<(List<MasterOrder> Items, int TotalCount)> GetByUserIdWithPaginationAsync(
-        Guid userId, int pageNumber, int pageSize, CancellationToken cancellationToken = default);
+        Guid userId,
+        int pageNumber,
+        int pageSize,
+        PaymentStatus? paymentStatus,
+        PaymentMethod? paymentMethod,
+        DateTime? fromDate,
+        DateTime? toDate,
+        CancellationToken cancellationToken = default);
 }

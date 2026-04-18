@@ -1,4 +1,5 @@
-﻿using MassTransit;
+﻿using Hangfire;
+using MassTransit;
 using MediatR;
 using Microsoft.AspNetCore.Http;
 using SoulViet.Modules.Marketplace.Marketplace.Application.Exceptions;
@@ -22,7 +23,8 @@ public class CreateOrderHandler(
     IVnPayService vnPayService,
     IHttpContextAccessor httpContextAccessor,
     IPublishEndpoint publishEndpoint,
-    IUserRepository userRepository)
+    IUserRepository userRepository,
+    IBackgroundJobClient backgroundJobClient)
     : IRequestHandler<CreateOrderCommand, CreateOrderResponse>
 {
     private readonly ICartRepository _cartRepository = cartRepository;
@@ -34,6 +36,7 @@ public class CreateOrderHandler(
     private readonly IHttpContextAccessor _httpContextAccessor = httpContextAccessor;
     private readonly IPublishEndpoint _publishEndpoint = publishEndpoint;
     private readonly IUserRepository _userRepository = userRepository;
+    private readonly IBackgroundJobClient _backgroundJobClient = backgroundJobClient;
 
     public async Task<CreateOrderResponse> Handle(CreateOrderCommand request, CancellationToken cancellationToken)
     {
@@ -203,6 +206,19 @@ public class CreateOrderHandler(
             }
 
             // Background job to process order payment timeout can be triggered
+            if (request.PaymentMethod == PaymentMethod.VnPay)
+            {
+                // set a timeout of 24h
+                _backgroundJobClient.Schedule<IPaymentTimeoutService>(
+                    service => service.ProcessTimeoutAsync(masterOrder.Id, CancellationToken.None),
+                    TimeSpan.FromDays(1)
+                );
+
+                // _backgroundJobClient.Schedule<IPaymentTimeoutService>(
+                //     service => service.ProcessTimeoutAsync(masterOrder.Id, CancellationToken.None),
+                //     TimeSpan.FromMinutes(1)
+                // );
+            }
 
             // Send mail notification to user and partner can be triggered
             var acceptLanguage = _httpContextAccessor.HttpContext?.Request.Headers["Accept-Language"].ToString() ?? "vi";

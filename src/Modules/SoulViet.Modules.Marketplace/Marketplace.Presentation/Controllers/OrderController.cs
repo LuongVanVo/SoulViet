@@ -1,8 +1,11 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using SoulViet.Modules.Marketplace.Marketplace.Application.Features.Orders.Commands.CancelOrder;
 using SoulViet.Modules.Marketplace.Marketplace.Application.Features.Orders.Commands.CreateOrder;
 using SoulViet.Modules.Marketplace.Marketplace.Application.Features.Orders.Commands.ProcessVnPayIpn;
+using SoulViet.Modules.Marketplace.Marketplace.Application.Features.Orders.Queries.GetMasterOrderDetail;
+using SoulViet.Modules.Marketplace.Marketplace.Application.Features.Orders.Queries.GetOrderHistory;
 using SoulViet.Modules.Marketplace.Marketplace.Application.Features.Orders.Queries.PreviewOrder;
 using SoulViet.Modules.Marketplace.Marketplace.Presentation.Helpers;
 using Swashbuckle.AspNetCore.Annotations;
@@ -107,5 +110,60 @@ public class OrderController : ControllerBase
         //     return Redirect($"http://localhost:3000/checkout/success?orderId={orderId}");
         // }
         // return Redirect($"http://localhost:3000/checkout/failed?orderId={orderId}");
+    }
+
+    [HttpGet("history")]
+    [SwaggerOperation(Summary = "Get order history",
+        Description =
+            "Retrieves the order history for the currently authenticated user, including details of past orders, their statuses, and associated information.")]
+    public async Task<IActionResult> GetOrderHistory([FromQuery] GetOrderHistoryQuery query,
+        CancellationToken cancellationToken)
+    {
+        var userId = User.GetCurrentUserId();
+
+        var result = await _mediator.Send(new GetOrderHistoryQuery
+        {
+            UserId = userId,
+            PageNumber = query.PageNumber,
+            PageSize = query.PageSize,
+            PaymentStatus = query.PaymentStatus,
+            PaymentMethod = query.PaymentMethod,
+            FromDate = query.FromDate,
+            ToDate = query.ToDate
+        }, cancellationToken);
+        return Ok(result);
+    }
+
+    [HttpGet("{masterOrderId}")]
+    [SwaggerOperation(Summary = "Get order details",
+        Description = "Retrieves the details of a specific order by its ID, including items, pricing, status, and any applied vouchers or discounts.")]
+    public async Task<IActionResult> GetOrderDetails([FromRoute] Guid masterOrderId, CancellationToken cancellationToken)
+    {
+        var userId = User.GetCurrentUserId();
+
+        var query = new GetMasterOrderDetailQuery()
+        {
+            MasterOrderId = masterOrderId,
+            UserId = userId
+        };
+
+        var result = await _mediator.Send(query, cancellationToken);
+        return Ok(result);
+    }
+
+    [HttpPatch("{masterOrderId}/cancel")]
+    [SwaggerOperation(Summary = "Cancel an order",
+        Description =
+            "Allows the user to cancel an order that has not yet been processed or shipped. The cancellation will update the order status and trigger any necessary refund processes if payment has already been made.")]
+    public async Task<IActionResult> CancelOrder([FromRoute] Guid masterOrderId)
+    {
+        var command = new CancelOrderCommand
+        {
+            MasterOrderId = masterOrderId,
+            UserId = User.GetCurrentUserId()
+        };
+
+        var result = await _mediator.Send(command);
+        return Ok(result);
     }
 }

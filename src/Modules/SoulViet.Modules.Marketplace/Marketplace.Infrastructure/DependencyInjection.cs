@@ -1,5 +1,7 @@
 using System.Reflection;
 using FluentValidation;
+using Hangfire;
+using Hangfire.PostgreSql;
 using MediatR;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -48,7 +50,22 @@ namespace SoulViet.Modules.Marketplace.Marketplace.Infrastructure
             services.AddScoped<IMasterOrderRepository, MasterOrderRepository>();
             services.AddScoped<IOrderRepository, OrderRepository>();
 
-            // Vnpay
+            // Hangfire
+            services.AddHangfire(config => config
+                .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+                .UseSimpleAssemblyNameTypeSerializer()
+                .UseRecommendedSerializerSettings()
+                .UsePostgreSqlStorage(options =>
+                {
+                    options.UseNpgsqlConnection(dbConnection);
+                })
+            );
+
+            services.AddHangfireServer(options =>
+            {
+                options.WorkerCount = Environment.ProcessorCount * 5;
+            });
+
             // Vnpay
             services.Configure<VnPayConfig>(options =>
             {
@@ -65,6 +82,7 @@ namespace SoulViet.Modules.Marketplace.Marketplace.Infrastructure
                 options.Locale = vnPaySection["Locale"] ?? "vn";
             });
             services.AddScoped<IVnPayService, VnPayService>();
+            services.AddScoped<IPaymentTimeoutService, PaymentTimeoutService>();
             services.AddHttpContextAccessor();
 
             services.AddValidatorsFromAssembly(assembly);

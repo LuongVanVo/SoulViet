@@ -23,6 +23,22 @@ public class VoucherRepository : IVoucherRepository
         return await _dbContext.Vouchers.FirstOrDefaultAsync(v => v.Code.ToUpper() == code.ToUpper(), cancellationToken);
     }
 
+    public async Task<Voucher?> GetByCodeAsync(string code, Guid? partnerId, CancellationToken cancellationToken = default)
+    {
+        var query = _dbContext.Vouchers.Where(v => v.Code.ToUpper() == code.ToUpper());
+
+        if (partnerId.HasValue)
+        {
+            query = query.Where(v => v.Scope == VoucherScope.Shop && v.PartnerId == partnerId.Value);
+        }
+        else
+        {
+            query = query.Where(v => v.Scope == VoucherScope.Platform);
+        }
+
+        return await query.FirstOrDefaultAsync(cancellationToken);
+    }
+
     public async Task AddAsync(Voucher voucher, CancellationToken cancellationToken = default)
     {
         await _dbContext.Vouchers.AddAsync(voucher, cancellationToken);
