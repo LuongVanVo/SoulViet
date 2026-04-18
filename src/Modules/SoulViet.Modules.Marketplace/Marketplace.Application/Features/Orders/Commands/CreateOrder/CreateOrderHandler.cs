@@ -1,10 +1,15 @@
-﻿using MediatR;
+﻿using MassTransit;
+using MediatR;
+using Microsoft.AspNetCore.Http;
 using SoulViet.Modules.Marketplace.Marketplace.Application.Exceptions;
 using SoulViet.Modules.Marketplace.Marketplace.Application.Features.Orders.Results;
 using SoulViet.Modules.Marketplace.Marketplace.Application.Interfaces;
 using SoulViet.Modules.Marketplace.Marketplace.Application.Interfaces.Repositories;
 using SoulViet.Modules.Marketplace.Marketplace.Domain.Entities;
 using SoulViet.Modules.Marketplace.Marketplace.Domain.Enums;
+using SoulViet.Modules.Marketplace.Marketplace.Infrastructure.Services;
+using SoulViet.Shared.Application.Common.Events;
+using SoulViet.Shared.Application.Interfaces.Repositories;
 
 namespace SoulViet.Modules.Marketplace.Marketplace.Application.Features.Orders.Commands.CreateOrder;
 
@@ -13,7 +18,11 @@ public class CreateOrderHandler(
     IMarketplaceProductRepository marketplaceProductRepository,
     IVoucherRepository voucherRepository,
     IMasterOrderRepository masterOrderRepository,
-    IUnitOfWork unitOfWork)
+    IUnitOfWork unitOfWork,
+    IVnPayService vnPayService,
+    IHttpContextAccessor httpContextAccessor,
+    IPublishEndpoint publishEndpoint,
+    IUserRepository userRepository)
     : IRequestHandler<CreateOrderCommand, CreateOrderResponse>
 {
     private readonly ICartRepository _cartRepository = cartRepository;
@@ -21,6 +30,10 @@ public class CreateOrderHandler(
     private readonly IVoucherRepository _voucherRepository = voucherRepository;
     private readonly IMasterOrderRepository _masterOrderRepository = masterOrderRepository;
     private readonly IUnitOfWork _unitOfWork = unitOfWork;
+    private readonly IVnPayService _vnPayService = vnPayService;
+    private readonly IHttpContextAccessor _httpContextAccessor = httpContextAccessor;
+    private readonly IPublishEndpoint _publishEndpoint = publishEndpoint;
+    private readonly IUserRepository _userRepository = userRepository;
 
     public async Task<CreateOrderResponse> Handle(CreateOrderCommand request, CancellationToken cancellationToken)
     {
@@ -178,12 +191,66 @@ public class CreateOrderHandler(
             // 6. Commit transaction
             await _unitOfWork.CommitTransactionAsync(cancellationToken);
 
+            // 7. Generate payment URL if needed
+            string? paymentUrl = null;
+            if (request.PaymentMethod == PaymentMethod.VnPay)
+            {
+                var context = _httpContextAccessor.HttpContext;
+                if (context != null)
+                {
+                    paymentUrl = _vnPayService.CreatePaymentUrl(masterOrder, context);
+                }
+            }
+
+            // Background job to process order payment timeout can be triggered
+
+            // Send mail notification to user and partner can be triggered
+            var acceptLanguage = _httpContextAccessor.HttpContext?.Request.Headers["Accept-Language"].ToString() ?? "vi";
+            var isVietnamese = acceptLanguage.StartsWith("vi", StringComparison.OrdinalIgnoreCase);
+            var userLanguage = isVietnamese ? "vi" : "en";
+
+            try
+            {
+                await _publishEndpoint.Publish(new UserOrderCreatedEvent()
+                {
+                    MasterOrderId = masterOrder.Id,
+                    UserId = request.UserId,
+                    ReceiverName = request.ReceiverName,
+                    ReceiverEmail = request.ReceiverEmail,
+                    GrandTotal = masterOrder.GrandTotal,
+                    Language = userLanguage
+                }, cancellationToken);
+
+                foreach (var vendorOrder in masterOrder.VendorOrders)
+                {
+                    var partner = await _userRepository.GetUserByIdAsync(vendorOrder.PartnerId);
+                    if (partner != null && !string.IsNullOrEmpty(partner.Email))
+                    {
+                        var partnerEmail = partner.Email;
+                        await _publishEndpoint.Publish(new PartnerOrderCreatedEvent
+                        {
+                            OrderId = vendorOrder.Id,
+                            PartnerId = vendorOrder.PartnerId,
+                            PartnerEmail = partnerEmail,
+                            CustomerName = request.ReceiverName,
+                            TotalAmount = Math.Max(0, vendorOrder.TotalAmount - vendorOrder.ShopDiscountAmount),
+                            Language = "vi"
+                        }, cancellationToken);
+                    }
+                } 
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to send notification emails: {ex.Message}");
+            }
+
             return new CreateOrderResponse
             {
                 Success = true,
                 Message = "Order created successfully.",
                 MasterOrderId = masterOrder.Id,
-                GrandTotal = masterOrder.GrandTotal
+                GrandTotal = masterOrder.GrandTotal,
+                PaymentUrl = paymentUrl
             };
         }
         catch (Exception)

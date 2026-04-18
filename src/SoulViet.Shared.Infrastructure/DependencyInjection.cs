@@ -57,6 +57,8 @@ namespace SoulViet.Shared.Infrastructure
             {
                 x.AddConsumer<SendEmailConsumer>();
                 x.AddConsumer<ForgotPasswordConsumer>();
+                x.AddConsumer<UserOrderCreatedConsumer>();
+                x.AddConsumer<PartnerOrderCreatedConsumer>();
 
                 x.UsingRabbitMq((context, cfg) =>
                 {

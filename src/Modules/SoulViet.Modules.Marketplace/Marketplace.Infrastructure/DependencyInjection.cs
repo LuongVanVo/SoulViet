@@ -7,7 +7,9 @@ using SoulViet.Modules.Marketplace.Marketplace.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using SoulViet.Modules.Marketplace.Marketplace.Application.Interfaces;
 using SoulViet.Modules.Marketplace.Marketplace.Application.Interfaces.Repositories;
+using SoulViet.Modules.Marketplace.Marketplace.Infrastructure.Payments;
 using SoulViet.Modules.Marketplace.Marketplace.Infrastructure.Persistence.Repositories;
+using SoulViet.Modules.Marketplace.Marketplace.Infrastructure.Services;
 using SoulViet.Shared.Application.Common.Behaviors;
 using StackExchange.Redis;
 
@@ -45,6 +47,25 @@ namespace SoulViet.Modules.Marketplace.Marketplace.Infrastructure
             services.AddScoped<IVoucherRepository, VoucherRepository>();
             services.AddScoped<IMasterOrderRepository, MasterOrderRepository>();
             services.AddScoped<IOrderRepository, OrderRepository>();
+
+            // Vnpay
+            // Vnpay
+            services.Configure<VnPayConfig>(options =>
+            {
+                var vnPaySection = configuration.GetSection("VnPay");
+
+                options.TmnCode = Environment.ExpandEnvironmentVariables(vnPaySection["TmnCode"] ?? string.Empty);
+                options.HashSecret = Environment.ExpandEnvironmentVariables(vnPaySection["HashSecret"] ?? string.Empty);
+                options.BaseUrl = Environment.ExpandEnvironmentVariables(vnPaySection["BaseUrl"] ?? string.Empty);
+                options.ReturnUrl = Environment.ExpandEnvironmentVariables(vnPaySection["ReturnUrl"] ?? string.Empty);
+
+                options.Version = vnPaySection["Version"] ?? "2.1.0";
+                options.Command = vnPaySection["Command"] ?? "pay";
+                options.CurrencyCode = vnPaySection["CurrencyCode"] ?? "VND";
+                options.Locale = vnPaySection["Locale"] ?? "vn";
+            });
+            services.AddScoped<IVnPayService, VnPayService>();
+            services.AddHttpContextAccessor();
 
             services.AddValidatorsFromAssembly(assembly);
 

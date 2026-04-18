@@ -13,7 +13,6 @@ using Microsoft.EntityFrameworkCore;
 using SoulViet.API.Middlewares;
 using SoulViet.Modules.SoulMap.SoulMap.Infrastructure.Persistence.Seeder;
 using SoulViet.Shared.Application;
-using Swashbuckle.AspNetCore.Annotations;
 
 // Load Environment Variable
 Env.TraversePath().Load();
