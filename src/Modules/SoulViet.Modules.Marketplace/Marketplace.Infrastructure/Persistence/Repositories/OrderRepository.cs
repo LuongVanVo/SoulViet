@@ -45,4 +45,54 @@ public class OrderRepository : IOrderRepository
 
         return (items, totalCount);
     }
+
+    public async Task<(List<Order> Items, int TotalCount)> GetShopOrdersWithPaginationAsync(Guid partnerId, int pageNumber, int pageSize, OrderStatus? status,
+        PaymentStatus? paymentStatus, PaymentMethod? paymentMethod, DateTime? fromDate, DateTime? toDate,
+        CancellationToken cancellationToken = default)
+    {
+        var query = _dbContext.Orders
+            .Include(o => o.OrderItems)
+            .Include(o => o.MasterOrder)
+            .Where(o => o.PartnerId == partnerId)
+            .AsQueryable();
+
+        // Filter by order status
+        if (status.HasValue)
+            query = query.Where(o => o.Status == status.Value);
+
+        // Filter by payment status
+        if (paymentStatus.HasValue)
+            query = query.Where(o => o.MasterOrder != null && o.MasterOrder.PaymentStatus == paymentStatus.Value);
+
+        if (paymentMethod.HasValue)
+            query = query.Where(o => o.MasterOrder != null && o.MasterOrder.PaymentMethod == paymentMethod.Value);
+
+        if (fromDate.HasValue)
+        {
+            query = query.Where(o => o.CreatedAt >= fromDate.Value);
+        }
+
+        if (toDate.HasValue)
+        {
+            query = query.Where(o => o.CreatedAt <= toDate.Value);
+        }
+
+        query = query.OrderByDescending(o => o.CreatedAt);
+
+        var totalCount = await query.CountAsync(cancellationToken);
+        var items = await query.Skip((pageNumber - 1) * pageSize).Take(pageSize).ToListAsync(cancellationToken);
+
+        return (items, totalCount);
+    }
+
+    public async Task<Order?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        return await _dbContext.Orders.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+    }
+
+    public Task UpdateAsync(Order order, CancellationToken cancellationToken = default)
+    {
+        _dbContext.Orders.Update(order);
+        return Task.CompletedTask;
+    }
 }

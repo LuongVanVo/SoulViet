@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using SoulViet.Modules.Marketplace.Marketplace.Application.Interfaces.Repositories;
 using SoulViet.Modules.Marketplace.Marketplace.Domain.Entities;
+using SoulViet.Modules.Marketplace.Marketplace.Domain.Enums;
 
 namespace SoulViet.Modules.Marketplace.Marketplace.Infrastructure.Persistence.Repositories;
 
@@ -30,14 +31,79 @@ public class MasterOrderRepository : IMasterOrderRepository
             .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
     }
 
-    public async Task<(List<MasterOrder> Items, int TotalCount)> GetByUserIdWithPaginationAsync(Guid userId, int pageNumber, int pageSize,
+    public async Task<(List<MasterOrder> Items, int TotalCount)> GetByUserIdWithPaginationAsync(
+        Guid userId,
+        int pageNumber,
+        int pageSize,
+        PaymentStatus? paymentStatus,
+        PaymentMethod? paymentMethod,
+        DateTime? fromDate,
+        DateTime? toDate,
         CancellationToken cancellationToken = default)
     {
         var query = _dbContext.MasterOrders
             .Include(m => m.VendorOrders)
             .ThenInclude(o => o.OrderItems)
             .Where(m => m.UserId == userId)
-            .OrderByDescending(m => m.CreatedAt);
+            .AsQueryable();
+
+        if (paymentStatus.HasValue)
+        {
+            query = query.Where(m => m.PaymentStatus == paymentStatus.Value);
+        }
+
+        if (paymentMethod.HasValue)
+        {
+            query = query.Where(m => m.PaymentMethod == paymentMethod.Value);
+        }
+
+        if (fromDate.HasValue)
+        {
+            query = query.Where(m => m.CreatedAt >= fromDate.Value);
+        }
+
+        if (toDate.HasValue)
+        {
+            query = query.Where(m => m.CreatedAt <= toDate.Value);
+        }
+
+        query = query.OrderByDescending(m => m.CreatedAt);
+
+        var totalCount = await query.CountAsync(cancellationToken);
+        var items = await query.Skip((pageNumber - 1) * pageSize).Take(pageSize).ToListAsync(cancellationToken);
+
+        return (items, totalCount);
+    }
+
+    public async Task<(List<MasterOrder> Items, int TotalCount)> GetMasterOrdersWithPaginationForAdminAsync(int pageNumber, int pageSize, PaymentStatus? paymentStatus,
+        PaymentMethod? paymentMethod, DateTime? fromDate, DateTime? toDate, CancellationToken cancellationToken = default)
+    {
+        var query = _dbContext.MasterOrders
+            .Include(m => m.VendorOrders)
+            .ThenInclude(o => o.OrderItems)
+            .AsQueryable();
+
+        if (paymentStatus.HasValue)
+        {
+            query = query.Where(m => m.PaymentStatus == paymentStatus.Value);
+        }
+
+        if (paymentMethod.HasValue)
+        {
+            query = query.Where(m => m.PaymentMethod == paymentMethod.Value);
+        }
+
+        if (fromDate.HasValue)
+        {
+            query = query.Where(m => m.CreatedAt >= fromDate.Value);
+        }
+
+        if (toDate.HasValue)
+        {
+            query = query.Where(m => m.CreatedAt <= toDate.Value);
+        }
+
+        query = query.OrderByDescending(m => m.CreatedAt);
 
         var totalCount = await query.CountAsync(cancellationToken);
         var items = await query.Skip((pageNumber - 1) * pageSize).Take(pageSize).ToListAsync(cancellationToken);

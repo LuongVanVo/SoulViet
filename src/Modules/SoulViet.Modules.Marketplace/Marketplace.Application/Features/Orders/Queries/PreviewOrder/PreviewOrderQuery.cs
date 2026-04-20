@@ -9,4 +9,6 @@ public class PreviewOrderQuery : IRequest<PreviewOrderResponse>
     public List<Guid> SelectedCartItemIds { get; set; } = new();
     public string? PlatformVoucherCode { get; set; }
     public Dictionary<Guid, string> ShopVoucherCodes { get; set; } = new();
+    public bool UseSoulCoin { get; set; }
+    public decimal SoulCoinAmountToUse { get; set; }
 }

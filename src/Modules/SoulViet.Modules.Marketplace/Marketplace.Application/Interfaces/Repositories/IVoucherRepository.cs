@@ -6,6 +6,8 @@ public interface IVoucherRepository
 {
     Task<Voucher?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
     Task<Voucher?> GetByCodeAsync(string code, CancellationToken cancellationToken = default);
+    Task<Voucher?> GetByCodeAsync(string code, Guid? partnerId, CancellationToken cancellationToken = default);
+
     Task AddAsync(Voucher voucher, CancellationToken cancellationToken = default);
     void Update(Voucher voucher);
 

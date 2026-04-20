@@ -14,4 +14,14 @@ public static class UserHelper
 
         return Guid.Parse(userIdClaim);
     }
+
+    public static string GetCurrentUserEmail(this ClaimsPrincipal user)
+    {
+        var emailClaim = user.FindFirstValue(ClaimTypes.Email) ?? user.FindFirstValue(JwtRegisteredClaimNames.Email);
+
+        if (string.IsNullOrEmpty(emailClaim))
+            throw new UnauthorizedAccessException("User email not found in token.");
+
+        return emailClaim;
+    }
 }

@@ -1,10 +1,16 @@
-﻿using MediatR;
+﻿using Hangfire;
+using MassTransit;
+using MediatR;
+using Microsoft.AspNetCore.Http;
 using SoulViet.Modules.Marketplace.Marketplace.Application.Exceptions;
 using SoulViet.Modules.Marketplace.Marketplace.Application.Features.Orders.Results;
 using SoulViet.Modules.Marketplace.Marketplace.Application.Interfaces;
 using SoulViet.Modules.Marketplace.Marketplace.Application.Interfaces.Repositories;
 using SoulViet.Modules.Marketplace.Marketplace.Domain.Entities;
 using SoulViet.Modules.Marketplace.Marketplace.Domain.Enums;
+using SoulViet.Modules.Marketplace.Marketplace.Infrastructure.Services;
+using SoulViet.Shared.Application.Common.Events;
+using SoulViet.Shared.Application.Interfaces.Repositories;
 
 namespace SoulViet.Modules.Marketplace.Marketplace.Application.Features.Orders.Commands.CreateOrder;
 
@@ -13,7 +19,13 @@ public class CreateOrderHandler(
     IMarketplaceProductRepository marketplaceProductRepository,
     IVoucherRepository voucherRepository,
     IMasterOrderRepository masterOrderRepository,
-    IUnitOfWork unitOfWork)
+    IUnitOfWork unitOfWork,
+    IVnPayService vnPayService,
+    IHttpContextAccessor httpContextAccessor,
+    IPublishEndpoint publishEndpoint,
+    IUserRepository userRepository,
+    IBackgroundJobClient backgroundJobClient,
+    ISoulCoinTransactionRepository soulCoinTransactionRepository)
     : IRequestHandler<CreateOrderCommand, CreateOrderResponse>
 {
     private readonly ICartRepository _cartRepository = cartRepository;
@@ -21,6 +33,12 @@ public class CreateOrderHandler(
     private readonly IVoucherRepository _voucherRepository = voucherRepository;
     private readonly IMasterOrderRepository _masterOrderRepository = masterOrderRepository;
     private readonly IUnitOfWork _unitOfWork = unitOfWork;
+    private readonly IVnPayService _vnPayService = vnPayService;
+    private readonly IHttpContextAccessor _httpContextAccessor = httpContextAccessor;
+    private readonly IPublishEndpoint _publishEndpoint = publishEndpoint;
+    private readonly IUserRepository _userRepository = userRepository;
+    private readonly IBackgroundJobClient _backgroundJobClient = backgroundJobClient;
+    private readonly ISoulCoinTransactionRepository _soulCoinTransactionRepository = soulCoinTransactionRepository;
 
     public async Task<CreateOrderResponse> Handle(CreateOrderCommand request, CancellationToken cancellationToken)
     {
@@ -164,6 +182,50 @@ public class CreateOrderHandler(
             // Finalize master order
             masterOrder.GrandTotal = Math.Max(0, totalBeforePlatformVoucher - masterOrder.PlatformDiscountAmount);
 
+            // Process SoulCoin usage
+            int soulCoinToUse = 0;
+
+            if (request.UseSoulCoin && request.SoulCoinAmountToUse > 0)
+            {
+                var user = await _userRepository.GetUserByIdAsync(request.UserId);
+                if (user == null) throw new BadRequestException("User not found.");
+
+                if (user.SoulCoinBalance < request.SoulCoinAmountToUse)
+                    throw new BadRequestException("Insufficient SoulCoin balance.");
+
+                soulCoinToUse = (int)Math.Min((decimal)request.SoulCoinAmountToUse, masterOrder.GrandTotal);
+
+                // subtract SoulCoin from user balance
+                user.SoulCoinBalance -= soulCoinToUse;
+                await _userRepository.UpdateUserAsync(user);
+
+                // record SoulCoin transaction
+                var coinTransaction = new SoulCoinTransaction
+                {
+                    Id = Guid.NewGuid(),
+                    UserId = user.Id,
+                    Amount = -soulCoinToUse,
+                    Type = SoulCoinTransactionType.Payment,
+                    ReferenceId = masterOrder.Id.ToString(),
+                    Description = $"Pay for order {masterOrder.Id}",
+                    CreatedAt = DateTime.UtcNow
+                };
+                await _soulCoinTransactionRepository.AddAsync(coinTransaction, cancellationToken);
+            }
+
+            // Update fields new payment into MasterOrder
+            masterOrder.SoulCoinUsed = soulCoinToUse;
+            masterOrder.FinalPayableAmount = masterOrder.GrandTotal - soulCoinToUse;
+
+            if (masterOrder.FinalPayableAmount == 0)
+            {
+                masterOrder.PaymentStatus = PaymentStatus.Success;
+                foreach (var vendorOrder in masterOrder.VendorOrders)
+                {
+                    vendorOrder.Status = OrderStatus.Processing;
+                }
+            }
+
             // 4. Save to database
             await _masterOrderRepository.AddAsync(masterOrder, cancellationToken);
 
@@ -178,12 +240,77 @@ public class CreateOrderHandler(
             // 6. Commit transaction
             await _unitOfWork.CommitTransactionAsync(cancellationToken);
 
+            // 7. Generate payment URL if needed
+            string? paymentUrl = null;
+            if (request.PaymentMethod == PaymentMethod.VnPay && masterOrder.FinalPayableAmount > 0)
+            {
+                var context = _httpContextAccessor.HttpContext;
+                if (context != null)
+                {
+                    paymentUrl = _vnPayService.CreatePaymentUrl(masterOrder, context);
+                }
+
+                // set a timeout of 24h with background job to automatically cancel order if payment not completed
+                _backgroundJobClient.Schedule<IPaymentTimeoutService>(
+                    service => service.ProcessTimeoutAsync(masterOrder.Id, CancellationToken.None),
+                    TimeSpan.FromDays(1)
+                );
+
+                // _backgroundJobClient.Schedule<IPaymentTimeoutService>(
+                //     service => service.ProcessTimeoutAsync(masterOrder.Id, CancellationToken.None),
+                //     TimeSpan.FromMinutes(1)
+                // );
+            }
+
+            // Send mail notification to user and partner can be triggered
+            var acceptLanguage = _httpContextAccessor.HttpContext?.Request.Headers["Accept-Language"].ToString() ?? "vi";
+            var isVietnamese = acceptLanguage.StartsWith("vi", StringComparison.OrdinalIgnoreCase);
+            var userLanguage = isVietnamese ? "vi" : "en";
+
+            try
+            {
+                await _publishEndpoint.Publish(new UserOrderCreatedEvent()
+                {
+                    MasterOrderId = masterOrder.Id,
+                    UserId = request.UserId,
+                    ReceiverName = request.ReceiverName,
+                    ReceiverEmail = request.ReceiverEmail,
+                    GrandTotal = masterOrder.GrandTotal,
+                    Language = userLanguage
+                }, cancellationToken);
+
+                foreach (var vendorOrder in masterOrder.VendorOrders)
+                {
+                    var partner = await _userRepository.GetUserByIdAsync(vendorOrder.PartnerId);
+                    if (partner != null && !string.IsNullOrEmpty(partner.Email))
+                    {
+                        var partnerEmail = partner.Email;
+                        await _publishEndpoint.Publish(new PartnerOrderCreatedEvent
+                        {
+                            OrderId = vendorOrder.Id,
+                            PartnerId = vendorOrder.PartnerId,
+                            PartnerEmail = partnerEmail,
+                            CustomerName = request.ReceiverName,
+                            TotalAmount = Math.Max(0, vendorOrder.TotalAmount - vendorOrder.ShopDiscountAmount),
+                            Language = "vi"
+                        }, cancellationToken);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to send notification emails: {ex.Message}");
+            }
+
             return new CreateOrderResponse
             {
                 Success = true,
                 Message = "Order created successfully.",
                 MasterOrderId = masterOrder.Id,
-                GrandTotal = masterOrder.GrandTotal
+                GrandTotal = masterOrder.GrandTotal,
+                PaymentUrl = paymentUrl,
+                SoulCoinUsed = request.UseSoulCoin,
+                FinalPayableAmount = masterOrder.FinalPayableAmount
             };
         }
         catch (Exception)

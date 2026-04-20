@@ -1,6 +1,8 @@
 using DotNetEnv;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using System.Text.Json;
+using Hangfire;
+using Hangfire.Dashboard.BasicAuthorization;
 using RabbitMQ.Client;
 
 // Import Dependency Injection Extensions from Modules
@@ -13,7 +15,6 @@ using Microsoft.EntityFrameworkCore;
 using SoulViet.API.Middlewares;
 using SoulViet.Modules.SoulMap.SoulMap.Infrastructure.Persistence.Seeder;
 using SoulViet.Shared.Application;
-using Swashbuckle.AspNetCore.Annotations;
 
 // Load Environment Variable
 Env.TraversePath().Load();
@@ -143,6 +144,28 @@ using (var scope = app.Services.CreateScope())
 app.MapControllers();
 app.UseAuthentication();
 app.UseAuthorization();
+
+// Dashboard hangfire
+app.UseHangfireDashboard("/hangfire", new DashboardOptions
+{
+    Authorization = new[]
+    {
+        new BasicAuthAuthorizationFilter(new BasicAuthAuthorizationFilterOptions
+        {
+            RequireSsl = false, // Change to true if you strictly use HTTPS in production
+            SslRedirect = false,
+            LoginCaseSensitive = true,
+            Users = new[]
+            {
+                new BasicAuthAuthorizationUser
+                {
+                    Login = "admin",
+                    PasswordClear = "admin"
+                }
+            }
+        })
+    }
+});
 
 var backendUrl = Environment.GetEnvironmentVariable("BACKEND_URL");
 

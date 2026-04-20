@@ -6,5 +6,6 @@ namespace SoulViet.Modules.Marketplace.Marketplace.Domain.Enums
         Success = 2,
         Failed = 3,
         Refunded = 4,
+        Canceled = 5
     }
 }

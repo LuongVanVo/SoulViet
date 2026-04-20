@@ -233,6 +233,9 @@ namespace SoulViet.API.Migrations
                     b.Property<string>("CreatedBy")
                         .HasColumnType("text");
 
+                    b.Property<decimal>("FinalPayableAmount")
+                        .HasColumnType("numeric");
+
                     b.Property<decimal>("GrandTotal")
                         .HasColumnType("decimal(18,2)");
 
@@ -257,6 +260,9 @@ namespace SoulViet.API.Migrations
                     b.Property<string>("PlatformVoucherCode")
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
+
+                    b.Property<decimal>("SoulCoinUsed")
+                        .HasColumnType("numeric");
 
                     b.Property<decimal>("TotalItemsPrice")
                         .HasColumnType("decimal(18,2)");
@@ -523,6 +529,42 @@ namespace SoulViet.API.Migrations
                     b.HasIndex("PartnerId");
 
                     b.ToTable("Settlements", "marketplace");
+                });
+
+            modelBuilder.Entity("SoulViet.Modules.Marketplace.Marketplace.Domain.Entities.SoulCoinTransaction", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("ReferenceId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("SoulCoinTransactions", "marketplace");
                 });
 
             modelBuilder.Entity("SoulViet.Modules.Marketplace.Marketplace.Domain.Entities.Voucher", b =>

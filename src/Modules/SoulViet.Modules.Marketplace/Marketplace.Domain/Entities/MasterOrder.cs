@@ -19,6 +19,8 @@ public class MasterOrder : BaseAuditableEntity
     public PaymentStatus PaymentStatus { get; set; } = PaymentStatus.Pending;
     public string? TransactionId { get; set; }
     public DateTime? PaymentDate { get; set; }
+    public decimal SoulCoinUsed { get; set; } // Số SoulCoin đã sử dụng trong đơn hàng này
+    public decimal FinalPayableAmount { get; set; } // Số tiền cuối cùng khách phải trả sau khi trừ SoulCoin
 
     // Một lần thanh toán có thể có nhiều đơn hàng của các partner
     public ICollection<Order> VendorOrders { get; set; } = new List<Order>();
