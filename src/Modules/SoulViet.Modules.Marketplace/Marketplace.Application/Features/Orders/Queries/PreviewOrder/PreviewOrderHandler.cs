@@ -3,6 +3,7 @@ using SoulViet.Modules.Marketplace.Marketplace.Application.Exceptions;
 using SoulViet.Modules.Marketplace.Marketplace.Application.Features.Orders.Results;
 using SoulViet.Modules.Marketplace.Marketplace.Application.Interfaces.Repositories;
 using SoulViet.Modules.Marketplace.Marketplace.Domain.Enums;
+using SoulViet.Shared.Application.Interfaces.Repositories;
 
 namespace SoulViet.Modules.Marketplace.Marketplace.Application.Features.Orders.Queries.PreviewOrder;
 
@@ -11,11 +12,13 @@ public class PreviewOrderHandler : IRequestHandler<PreviewOrderQuery, PreviewOrd
     private readonly ICartRepository _cartRepository;
     private readonly IMarketplaceProductRepository _marketplaceProductRepository;
     private readonly IVoucherRepository _voucherRepository;
-    public PreviewOrderHandler(ICartRepository cartRepository, IMarketplaceProductRepository marketplaceProductRepository, IVoucherRepository voucherRepository)
+    private readonly IUserRepository _userRepository;
+    public PreviewOrderHandler(ICartRepository cartRepository, IMarketplaceProductRepository marketplaceProductRepository, IVoucherRepository voucherRepository, IUserRepository userRepository)
     {
         _cartRepository = cartRepository;
         _marketplaceProductRepository = marketplaceProductRepository;
         _voucherRepository = voucherRepository;
+        _userRepository = userRepository;
     }
 
     public async Task<PreviewOrderResponse> Handle(PreviewOrderQuery request, CancellationToken cancellationToken)
@@ -124,6 +127,22 @@ public class PreviewOrderHandler : IRequestHandler<PreviewOrderQuery, PreviewOrd
         // Final grand total
         response.GrandTotal = totalAmountBeforePlatformVoucher - response.PlatformDiscountAmount;
         if (response.GrandTotal < 0) response.GrandTotal = 0;
+
+        decimal soulCoinToUse = 0;
+
+        if (request.UseSoulCoin && request.SoulCoinAmountToUse > 0)
+        {
+            var user = await _userRepository.GetUserByIdAsync(request.UserId);
+            if (user == null) throw new BadRequestException("User not found.");
+
+            if (user.SoulCoinBalance < request.SoulCoinAmountToUse)
+                throw new BadRequestException("Insufficient Soul Coin balance.");
+
+            soulCoinToUse = (int)Math.Min((decimal)request.SoulCoinAmountToUse, response.GrandTotal);
+        }
+
+        response.SoulCoinUsed = soulCoinToUse;
+        response.FinalPayableAmount = response.GrandTotal - soulCoinToUse;
 
         return response;
     }

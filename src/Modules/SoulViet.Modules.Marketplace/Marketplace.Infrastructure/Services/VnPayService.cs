@@ -35,7 +35,7 @@ public class VnPayService : IVnPayService
         pay.AddRequestData("vnp_Command", _vnPayConfig.Command);
         pay.AddRequestData("vnp_TmnCode", tmnCode);
 
-        pay.AddRequestData("vnp_Amount", ((long)(masterOrder.GrandTotal * 100)).ToString());
+        pay.AddRequestData("vnp_Amount", ((long)(masterOrder.FinalPayableAmount * 100)).ToString());
 
         pay.AddRequestData("vnp_CreateDate", timeNow.ToString("yyyyMMddHHmmss"));
         pay.AddRequestData("vnp_CurrCode", _vnPayConfig.CurrencyCode);

@@ -19,4 +19,14 @@ public interface IMasterOrderRepository
         DateTime? fromDate,
         DateTime? toDate,
         CancellationToken cancellationToken = default);
+
+    Task<(List<MasterOrder> Items, int TotalCount)> GetMasterOrdersWithPaginationForAdminAsync(
+        int pageNumber,
+        int pageSize,
+        PaymentStatus? paymentStatus,
+        PaymentMethod? paymentMethod,
+        DateTime? fromDate,
+        DateTime? toDate,
+        CancellationToken cancellationToken = default
+    );
 }

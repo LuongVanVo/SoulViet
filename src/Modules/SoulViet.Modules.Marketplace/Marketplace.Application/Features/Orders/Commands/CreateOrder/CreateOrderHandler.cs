@@ -24,7 +24,8 @@ public class CreateOrderHandler(
     IHttpContextAccessor httpContextAccessor,
     IPublishEndpoint publishEndpoint,
     IUserRepository userRepository,
-    IBackgroundJobClient backgroundJobClient)
+    IBackgroundJobClient backgroundJobClient,
+    ISoulCoinTransactionRepository soulCoinTransactionRepository)
     : IRequestHandler<CreateOrderCommand, CreateOrderResponse>
 {
     private readonly ICartRepository _cartRepository = cartRepository;
@@ -37,6 +38,7 @@ public class CreateOrderHandler(
     private readonly IPublishEndpoint _publishEndpoint = publishEndpoint;
     private readonly IUserRepository _userRepository = userRepository;
     private readonly IBackgroundJobClient _backgroundJobClient = backgroundJobClient;
+    private readonly ISoulCoinTransactionRepository _soulCoinTransactionRepository = soulCoinTransactionRepository;
 
     public async Task<CreateOrderResponse> Handle(CreateOrderCommand request, CancellationToken cancellationToken)
     {
@@ -180,6 +182,50 @@ public class CreateOrderHandler(
             // Finalize master order
             masterOrder.GrandTotal = Math.Max(0, totalBeforePlatformVoucher - masterOrder.PlatformDiscountAmount);
 
+            // Process SoulCoin usage
+            int soulCoinToUse = 0;
+
+            if (request.UseSoulCoin && request.SoulCoinAmountToUse > 0)
+            {
+                var user = await _userRepository.GetUserByIdAsync(request.UserId);
+                if (user == null) throw new BadRequestException("User not found.");
+
+                if (user.SoulCoinBalance < request.SoulCoinAmountToUse)
+                    throw new BadRequestException("Insufficient SoulCoin balance.");
+
+                soulCoinToUse = (int)Math.Min((decimal)request.SoulCoinAmountToUse, masterOrder.GrandTotal);
+
+                // subtract SoulCoin from user balance
+                user.SoulCoinBalance -= soulCoinToUse;
+                await _userRepository.UpdateUserAsync(user);
+
+                // record SoulCoin transaction
+                var coinTransaction = new SoulCoinTransaction
+                {
+                    Id = Guid.NewGuid(),
+                    UserId = user.Id,
+                    Amount = -soulCoinToUse,
+                    Type = SoulCoinTransactionType.Payment,
+                    ReferenceId = masterOrder.Id.ToString(),
+                    Description = $"Pay for order {masterOrder.Id}",
+                    CreatedAt = DateTime.UtcNow
+                };
+                await _soulCoinTransactionRepository.AddAsync(coinTransaction, cancellationToken);
+            }
+
+            // Update fields new payment into MasterOrder
+            masterOrder.SoulCoinUsed = soulCoinToUse;
+            masterOrder.FinalPayableAmount = masterOrder.GrandTotal - soulCoinToUse;
+
+            if (masterOrder.FinalPayableAmount == 0)
+            {
+                masterOrder.PaymentStatus = PaymentStatus.Success;
+                foreach (var vendorOrder in masterOrder.VendorOrders)
+                {
+                    vendorOrder.Status = OrderStatus.Processing;
+                }
+            }
+
             // 4. Save to database
             await _masterOrderRepository.AddAsync(masterOrder, cancellationToken);
 
@@ -196,19 +242,15 @@ public class CreateOrderHandler(
 
             // 7. Generate payment URL if needed
             string? paymentUrl = null;
-            if (request.PaymentMethod == PaymentMethod.VnPay)
+            if (request.PaymentMethod == PaymentMethod.VnPay && masterOrder.FinalPayableAmount > 0)
             {
                 var context = _httpContextAccessor.HttpContext;
                 if (context != null)
                 {
                     paymentUrl = _vnPayService.CreatePaymentUrl(masterOrder, context);
                 }
-            }
 
-            // Background job to process order payment timeout can be triggered
-            if (request.PaymentMethod == PaymentMethod.VnPay)
-            {
-                // set a timeout of 24h
+                // set a timeout of 24h with background job to automatically cancel order if payment not completed
                 _backgroundJobClient.Schedule<IPaymentTimeoutService>(
                     service => service.ProcessTimeoutAsync(masterOrder.Id, CancellationToken.None),
                     TimeSpan.FromDays(1)
@@ -253,7 +295,7 @@ public class CreateOrderHandler(
                             Language = "vi"
                         }, cancellationToken);
                     }
-                } 
+                }
             }
             catch (Exception ex)
             {
@@ -266,7 +308,9 @@ public class CreateOrderHandler(
                 Message = "Order created successfully.",
                 MasterOrderId = masterOrder.Id,
                 GrandTotal = masterOrder.GrandTotal,
-                PaymentUrl = paymentUrl
+                PaymentUrl = paymentUrl,
+                SoulCoinUsed = request.UseSoulCoin,
+                FinalPayableAmount = masterOrder.FinalPayableAmount
             };
         }
         catch (Exception)

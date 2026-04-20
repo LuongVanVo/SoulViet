@@ -7,4 +7,6 @@ public class CreateOrderResponse
     public Guid MasterOrderId { get; set; }
     public decimal GrandTotal { get; set; }
     public string? PaymentUrl { get; set; }
+    public bool SoulCoinUsed { get; set; }
+    public decimal FinalPayableAmount { get; set; }
 }

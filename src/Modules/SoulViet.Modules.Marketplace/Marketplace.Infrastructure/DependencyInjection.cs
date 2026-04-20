@@ -49,6 +49,7 @@ namespace SoulViet.Modules.Marketplace.Marketplace.Infrastructure
             services.AddScoped<IVoucherRepository, VoucherRepository>();
             services.AddScoped<IMasterOrderRepository, MasterOrderRepository>();
             services.AddScoped<IOrderRepository, OrderRepository>();
+            services.AddScoped<ISoulCoinTransactionRepository, SoulCoinTransactionRepository>();
 
             // Hangfire
             services.AddHangfire(config => config

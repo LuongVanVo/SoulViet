@@ -3,7 +3,9 @@ using Microsoft.Extensions.Logging;
 using SoulViet.Modules.Marketplace.Marketplace.Application.Exceptions;
 using SoulViet.Modules.Marketplace.Marketplace.Application.Interfaces;
 using SoulViet.Modules.Marketplace.Marketplace.Application.Interfaces.Repositories;
+using SoulViet.Modules.Marketplace.Marketplace.Domain.Entities;
 using SoulViet.Modules.Marketplace.Marketplace.Domain.Enums;
+using SoulViet.Shared.Application.Interfaces.Repositories;
 
 namespace SoulViet.Modules.Marketplace.Marketplace.Application.Features.Orders.Commands.CancelOrder;
 
@@ -13,13 +15,17 @@ public class CancelOrderHandler : IRequestHandler<CancelOrderCommand, bool>
     private readonly IMarketplaceProductRepository _marketplaceProductRepository;
     private readonly IVoucherRepository _voucherRepository;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly ISoulCoinTransactionRepository _soulCoinTransactionRepository;
+    private readonly IUserRepository _userRepository;
     private readonly ILogger<CancelOrderHandler> _logger;
-    public CancelOrderHandler(IMasterOrderRepository masterOrderRepository, IMarketplaceProductRepository marketplaceProductRepository, IVoucherRepository voucherRepository, IUnitOfWork unitOfWork, ILogger<CancelOrderHandler> logger)
+    public CancelOrderHandler(IMasterOrderRepository masterOrderRepository, IMarketplaceProductRepository marketplaceProductRepository, IVoucherRepository voucherRepository, IUnitOfWork unitOfWork, ISoulCoinTransactionRepository soulCoinTransactionRepository, IUserRepository userRepository, ILogger<CancelOrderHandler> logger)
     {
         _masterOrderRepository = masterOrderRepository;
         _marketplaceProductRepository = marketplaceProductRepository;
         _voucherRepository = voucherRepository;
         _unitOfWork = unitOfWork;
+        _soulCoinTransactionRepository = soulCoinTransactionRepository;
+        _userRepository = userRepository;
         _logger = logger;
     }
 
@@ -76,6 +82,30 @@ public class CancelOrderHandler : IRequestHandler<CancelOrderCommand, bool>
                 {
                     platformVoucher.UsedCount -= 1;
                     _voucherRepository.Update(platformVoucher);
+                }
+            }
+
+            // Restore SoulCoin
+            if (masterOrder.SoulCoinUsed > 0)
+            {
+                var user = await _userRepository.GetUserByIdAsync(masterOrder.UserId);
+                if (user != null)
+                {
+                    // Refund SoulCoin to user
+                    user.SoulCoinBalance += (int)masterOrder.SoulCoinUsed;
+                    await _userRepository.UpdateUserAsync(user);
+
+                    var coinTransaction = new SoulCoinTransaction
+                    {
+                        Id = Guid.NewGuid(),
+                        UserId = user.Id,
+                        Amount = masterOrder.SoulCoinUsed,
+                        Type = SoulCoinTransactionType.Refund,
+                        ReferenceId = masterOrder.Id.ToString(),
+                        Description = $"Refund SoulCoin for cancelled order {masterOrder.Id}",
+                        CreatedAt = DateTime.UtcNow
+                    };
+                    await _soulCoinTransactionRepository.AddAsync(coinTransaction, cancellationToken);
                 }
             }
 

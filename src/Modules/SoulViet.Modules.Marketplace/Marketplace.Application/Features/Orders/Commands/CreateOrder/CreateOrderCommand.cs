@@ -17,6 +17,8 @@ public class CreateOrderCommand : IRequest<CreateOrderResponse>
     public List<Guid> SelectedCartItemIds { get; set; } = new();
     public string? PlatformVoucherCode { get; set; }
     public Dictionary<Guid, string> ShopVoucherCodes { get; set; } = new();
+    public bool UseSoulCoin { get; set; }
+    public decimal SoulCoinAmountToUse { get; set; }
 
     public PaymentMethod PaymentMethod { get; set; } = PaymentMethod.Cod;
 }

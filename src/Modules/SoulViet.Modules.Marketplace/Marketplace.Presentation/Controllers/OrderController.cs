@@ -4,8 +4,13 @@ using Microsoft.AspNetCore.Mvc;
 using SoulViet.Modules.Marketplace.Marketplace.Application.Features.Orders.Commands.CancelOrder;
 using SoulViet.Modules.Marketplace.Marketplace.Application.Features.Orders.Commands.CreateOrder;
 using SoulViet.Modules.Marketplace.Marketplace.Application.Features.Orders.Commands.ProcessVnPayIpn;
+using SoulViet.Modules.Marketplace.Marketplace.Application.Features.Orders.Commands.UpdateOrderStatus;
+using SoulViet.Modules.Marketplace.Marketplace.Application.Features.Orders.Queries.GetAdminMasterOrderDetail;
+using SoulViet.Modules.Marketplace.Marketplace.Application.Features.Orders.Queries.GetAllOrdersForAdmin;
 using SoulViet.Modules.Marketplace.Marketplace.Application.Features.Orders.Queries.GetMasterOrderDetail;
 using SoulViet.Modules.Marketplace.Marketplace.Application.Features.Orders.Queries.GetOrderHistory;
+using SoulViet.Modules.Marketplace.Marketplace.Application.Features.Orders.Queries.GetRepayUrl;
+using SoulViet.Modules.Marketplace.Marketplace.Application.Features.Orders.Queries.GetShopOrders;
 using SoulViet.Modules.Marketplace.Marketplace.Application.Features.Orders.Queries.PreviewOrder;
 using SoulViet.Modules.Marketplace.Marketplace.Presentation.Helpers;
 using Swashbuckle.AspNetCore.Annotations;
@@ -164,6 +169,80 @@ public class OrderController : ControllerBase
         };
 
         var result = await _mediator.Send(command);
+        return Ok(result);
+    }
+
+    [Authorize(Roles = "LocalPartner")]
+    [HttpGet("local-partner")]
+    [SwaggerOperation(Summary = "Get local partner orders",
+        Description =
+            "Retrieves a list of orders associated with the local partner, allowing them to view and manage their orders.")]
+    public async Task<IActionResult> GetShopOrders([FromQuery] GetShopOrdersQuery query,
+        CancellationToken cancellationToken)
+    {
+        query.PartnerId = User.GetCurrentUserId();
+
+        var result = await _mediator.Send(query, cancellationToken);
+        return Ok(result);
+    }
+
+    [Authorize(Roles = "LocalPartner")]
+    [HttpPatch("local-partner/{orderId}/status")]
+    [SwaggerOperation(Summary = "Update local partner order status",
+        Description =
+            "Allows the local partner to update the status of an order, such as marking it as processed, shipped, or delivered, to keep customers informed about the progress of their orders.")]
+    public async Task<IActionResult> UpdateOrderStatus([FromRoute] Guid orderId,
+        [FromBody] UpdateOrderStatusCommand command)
+    {
+        command.PartnerId = User.GetCurrentUserId();
+        command.OrderId = orderId;
+
+        var result = await _mediator.Send(command);
+        return Ok(result);
+    }
+
+    [Authorize(Roles = "Admin")]
+    [HttpGet("admin")]
+    [SwaggerOperation(Summary = "Get all orders (admin)",
+        Description =
+            "Retrieves a list of all orders in the system for administrative purposes, allowing admins to monitor and manage orders across the entire marketplace.")]
+    public async Task<IActionResult> GetAllOrders([FromQuery] GetAllOrdersForAdminQuery query)
+    {
+        var result = await _mediator.Send(query);
+        return Ok(result);
+    }
+
+    [Authorize(Roles = "Admin")]
+    [HttpGet("admin/{masterOrderId}")]
+    [SwaggerOperation(Summary = "Get order details (admin)",
+        Description =
+            "Retrieves the details of a specific order by its ID for administrative purposes, allowing admins to view and manage order details across the entire marketplace.")]
+    public async Task<IActionResult> GetOrderDetailsForAdmin([FromRoute] Guid masterOrderId,
+        CancellationToken cancellationToken)
+    {
+        var query = new GetAdminMasterOrderDetailQuery()
+        {
+            MasterOrderId = masterOrderId
+        };
+
+        var result = await _mediator.Send(query, cancellationToken);
+        return Ok(result);
+    }
+
+    [Authorize]
+    [HttpGet("{masterOrderId}/repay-url")]
+    [SwaggerOperation(Summary = "Get repay URL for pending orders",
+        Description =
+            "Generates a new payment URL for orders that have a pending payment status, allowing users to complete their payment if the initial payment attempt was unsuccessful or if they need to retry the payment process.")]
+    public async Task<IActionResult> GetRepayUrl([FromRoute] Guid masterOrderId)
+    {
+        var query = new GetRepayUrlQuery
+        {
+            UserId = User.GetCurrentUserId(),
+            MasterOrderId = masterOrderId
+        };
+
+        var result = await _mediator.Send(query);
         return Ok(result);
     }
 }

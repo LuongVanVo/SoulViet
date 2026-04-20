@@ -9,8 +9,9 @@ public class PreviewOrderResponse
 
     public string? PlatformVoucherCode { get; set; }
     public decimal PlatformDiscountAmount { get; set; }
-
     public decimal GrandTotal { get; set; }
+    public decimal SoulCoinUsed { get; set; }
+    public decimal FinalPayableAmount { get; set; }
 }
 
 public class PreviewVendorOrder

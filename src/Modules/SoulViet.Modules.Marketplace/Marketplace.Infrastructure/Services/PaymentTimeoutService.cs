@@ -1,7 +1,9 @@
 ﻿using Microsoft.Extensions.Logging;
 using SoulViet.Modules.Marketplace.Marketplace.Application.Interfaces;
 using SoulViet.Modules.Marketplace.Marketplace.Application.Interfaces.Repositories;
+using SoulViet.Modules.Marketplace.Marketplace.Domain.Entities;
 using SoulViet.Modules.Marketplace.Marketplace.Domain.Enums;
+using SoulViet.Shared.Application.Interfaces.Repositories;
 
 namespace SoulViet.Modules.Marketplace.Marketplace.Infrastructure.Services;
 
@@ -11,13 +13,17 @@ public class PaymentTimeoutService : IPaymentTimeoutService
     private readonly IMarketplaceProductRepository _marketplaceProductRepository;
     private readonly IVoucherRepository _voucherRepository;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IUserRepository _userRepository;
+    private readonly ISoulCoinTransactionRepository _soulCoinTransactionRepository;
     private readonly ILogger<PaymentTimeoutService> _logger;
-    public PaymentTimeoutService(IMasterOrderRepository masterOrderRepository, IMarketplaceProductRepository marketplaceProductRepository, IVoucherRepository voucherRepository, IUnitOfWork unitOfWork, ILogger<PaymentTimeoutService> logger)
+    public PaymentTimeoutService(IMasterOrderRepository masterOrderRepository, IMarketplaceProductRepository marketplaceProductRepository, IVoucherRepository voucherRepository, IUnitOfWork unitOfWork, IUserRepository userRepository, ISoulCoinTransactionRepository soulCoinTransactionRepository, ILogger<PaymentTimeoutService> logger)
     {
         _masterOrderRepository = masterOrderRepository;
         _marketplaceProductRepository = marketplaceProductRepository;
         _voucherRepository = voucherRepository;
         _unitOfWork = unitOfWork;
+        _userRepository = userRepository;
+        _soulCoinTransactionRepository = soulCoinTransactionRepository;
         _logger = logger;
     }
 
@@ -72,6 +78,29 @@ public class PaymentTimeoutService : IPaymentTimeoutService
                 {
                     platformVoucher.UsedCount -= 1;
                     _voucherRepository.Update(platformVoucher);
+                }
+            }
+
+            // Restore SoulCoin if used
+            if (masterOrder.SoulCoinUsed > 0)
+            {
+                var user = await _userRepository.GetUserByIdAsync(masterOrder.UserId);
+                if (user != null)
+                {
+                    user.SoulCoinBalance += (int)masterOrder.SoulCoinUsed;
+                    await _userRepository.UpdateUserAsync(user);
+
+                    var coinTransaction = new SoulCoinTransaction()
+                    {
+                        Id = Guid.NewGuid(),
+                        UserId = user.Id,
+                        Amount = masterOrder.SoulCoinUsed, // Số dương để cộng vào ví
+                        Type = SoulCoinTransactionType.Refund,
+                        ReferenceId = masterOrder.Id.ToString(),
+                        Description = $"Refund SoulCoin for payment timeout on order {masterOrder.Id}",
+                        CreatedAt = DateTime.UtcNow
+                    };
+                    await _soulCoinTransactionRepository.AddAsync(coinTransaction, CancellationToken.None);
                 }
             }
 

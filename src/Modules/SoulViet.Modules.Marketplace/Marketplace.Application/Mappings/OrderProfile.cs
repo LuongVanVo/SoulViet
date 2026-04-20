@@ -12,6 +12,14 @@ public class OrderProfile : Profile
         CreateMap<Order, OrderDto>();
         CreateMap<OrderItem, OrderItemDto>();
 
+        CreateMap<MasterOrder, AdminMasterOrderDto>()
+            .ForMember(dest => dest.PaymentStatus,
+                opt => opt.MapFrom(src => src.PaymentStatus.ToString()))
+            .ForMember(dest => dest.PaymentMethod,
+                opt => opt.MapFrom(src => src.PaymentMethod.ToString()))
+            .ForMember(dest => dest.VendorOrderCount,
+                opt => opt.MapFrom(src => src.VendorOrders.Count));
+
         CreateMap<MasterOrder, OrderHistoryItemDto>()
             .ForMember(dest => dest.PaymentStatus,
                 opt => opt.MapFrom(src => src.PaymentStatus.ToString()))
@@ -41,7 +49,7 @@ public class OrderProfile : Profile
         CreateMap<MasterOrder, MasterOrderDetailDto>()
             .ForMember(dest => dest.PaymentStatus,
                 opt => opt.MapFrom(src => src.PaymentStatus.ToString()))
-            .ForMember(dest => dest.PaymentStatus,
+            .ForMember(dest => dest.PaymentMethod,
                 opt => opt.MapFrom(src => src.PaymentMethod.ToString()))
             .ForMember(dest => dest.ReceiverName,
                 opt => opt.MapFrom(src => src.VendorOrders.FirstOrDefault() != null ? src.VendorOrders.First().ReceiverName : null))
@@ -49,5 +57,19 @@ public class OrderProfile : Profile
                 opt => opt.MapFrom(src => src.VendorOrders.FirstOrDefault() != null ? src.VendorOrders.First().ReceiverPhone : null))
             .ForMember(dest => dest.ShippingAddress,
                 opt => opt.MapFrom(src => src.VendorOrders.FirstOrDefault() != null ? src.VendorOrders.First().ShippingAddress : null));
+
+        CreateMap<Order, ShopOrderDto>()
+            .ForMember(dest => dest.Status,
+                opt => opt.MapFrom(src => src.Status.ToString()))
+            .ForMember(dest => dest.PaymentStatus,
+                opt => opt.MapFrom(src => src.MasterOrder != null ? src.MasterOrder.PaymentStatus.ToString() : string.Empty))
+            .ForMember(dest => dest.PaymentMethod,
+                opt => opt.MapFrom(src => src.MasterOrder != null ? src.MasterOrder.PaymentMethod.ToString() : string.Empty))
+            .ForMember(dest => dest.TotalItems,
+                opt => opt.MapFrom(src => src.OrderItems.Sum(i => i.Quantity)));
+
+        CreateMap<MasterOrder, AdminMasterOrderDetailDto>()
+            .IncludeBase<MasterOrder, MasterOrderDetailDto>()
+            .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.UserId));
     }
 }
