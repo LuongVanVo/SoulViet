@@ -15,6 +15,7 @@ using Microsoft.EntityFrameworkCore;
 using SoulViet.API.Middlewares;
 using SoulViet.Modules.SoulMap.SoulMap.Infrastructure.Persistence.Seeder;
 using SoulViet.Shared.Application;
+using SoulViet.Modules.SoulMap.SoulMap.Application.Services;
 
 // Load Environment Variable
 Env.TraversePath().Load();
@@ -138,6 +139,32 @@ using (var scope = app.Services.CreateScope())
     {
         var logger = services.GetRequiredService<ILogger<Program>>();
         logger.LogError(ex, "An error occurred while seeding the database.");
+    }
+}
+
+if (args.Contains("--seed-media"))
+{
+    using (var scope = app.Services.CreateScope())
+    {
+        var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+        try
+        {
+            logger.LogInformation("Starting media URL migration...");
+
+            var mediaSeeder = scope.ServiceProvider.GetRequiredService<MediaMigrationService>();
+            var env = scope.ServiceProvider.GetRequiredService<IWebHostEnvironment>();
+            var repoRoot = Path.GetFullPath(Path.Combine(env.ContentRootPath, "..", ".."));
+            var jsonFilePath = Path.Combine(repoRoot, "dataset", "SoulViet_Migration_Final.json");
+            logger.LogInformation("Using media migration file: {JsonFilePath}", jsonFilePath);
+
+            await mediaSeeder.MigrateMediaUrlAsync(jsonFilePath);
+
+            logger.LogInformation("Media URL migration completed successfully.");
+        } 
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "An error occurred while migrating media URLs.");
+        }
     }
 }
 
