@@ -1,0 +1,161 @@
+# SoulViet Backend - Context & AI Guidelines
+
+## 1. Tech Stack & Dependencies
+- Runtime and language:
+	- .NET 10 (TargetFramework: net10.0)
+	- C# with Nullable enabled and ImplicitUsings enabled
+- Core backend framework:
+	- ASP.NET Core Web API
+	- Swagger/OpenAPI via Swashbuckle.AspNetCore 10.1.x
+- Architecture and application patterns:
+	- Modular Monolith (Marketplace, Social, SoulMap + Shared layers)
+	- Clean Architecture per module (Application, Domain, Infrastructure, Presentation)
+	- CQRS with MediatR 14.1.0
+	- Validation pipeline with FluentValidation 12.1.1
+	- Object mapping with AutoMapper 16.1.1
+- Data and persistence:
+	- Entity Framework Core 10.0.5
+	- PostgreSQL via Npgsql.EntityFrameworkCore.PostgreSQL 10.0.1
+	- PostGIS support via NetTopologySuite + Npgsql NetTopologySuite package
+	- Central migration context: AppMigrationDbContext aggregating all module configurations
+- Infrastructure services:
+	- Redis (Microsoft.Extensions.Caching.StackExchangeRedis 10.0.5, StackExchange.Redis 2.12.4)
+	- RabbitMQ via MassTransit 8.5.7 and MassTransit.RabbitMQ 8.5.7
+	- Hangfire 1.8.23 with PostgreSql storage
+	- Health checks for PostgreSQL, Redis, RabbitMQ (AspNetCore.HealthChecks.* 9.0.0)
+- Security and auth:
+	- JWT Bearer auth (Microsoft.AspNetCore.Authentication.JwtBearer 10.0.5)
+	- RSA key-based token validation
+	- Cookie-based token retrieval support in JwtBearer events
+- External integrations:
+	- CloudinaryDotNet 1.28.0
+	- MailKit 4.15.1 + MimeKit 4.15.1
+	- VnPay payment integration
+	- CsvHelper 33.1.0 for data seeding
+- Containerized local infrastructure:
+	- postgis/postgis:15-3.4-alpine
+	- redis:alpine
+	- rabbitmq:3-management
+
+## 2. Architecture & Folder Structure
+- Architectural style:
+	- Modular Monolith host in SoulViet.API.
+	- Shared cross-cutting and identity/auth concerns in SoulViet.Shared.*.
+	- Business domains split into bounded modules under src/Modules.
+- Top-level source layout:
+	- src/SoulViet.API:
+		- Application host entry point.
+		- Global middleware, root controllers, Swagger, health checks, migration context.
+		- Registers all module dependency injection extensions.
+	- src/SoulViet.Shared.Domain:
+		- Shared entities and enums (User, Role, UserSession, etc.).
+		- Shared base entity abstraction for auditing fields.
+	- src/SoulViet.Shared.Application:
+		- Shared CQRS features (notably Auth), interfaces, exception types, behaviors.
+		- MediatR + FluentValidation pipeline registration.
+	- src/SoulViet.Shared.Infrastructure:
+		- Shared EF DbContext, repositories, token/cookie/mail/cloud services.
+		- MassTransit consumers and Redis cache integration.
+	- src/Modules/SoulViet.Modules.Marketplace:
+		- Marketplace.Application: feature-based CQRS folders (Carts, Orders, Vouchers, MarketProducts, MarketplaceCategories).
+		- Marketplace.Domain: entities and enums.
+		- Marketplace.Infrastructure: DbContext, repositories, UoW, payment/Hangfire services, module DI.
+		- Marketplace.Presentation: HTTP controllers delegating to IMediator.
+	- src/Modules/SoulViet.Modules.Social:
+		- Social.Application: feature-based CQRS folders (Posts, PostComments), validators, behaviors.
+		- Social.Domain: social entities.
+		- Social.Infrastructure: DbContext, repositories, services, module DI.
+		- Social.Presentation: controllers for social endpoints.
+	- src/Modules/SoulViet.Modules.SoulMap:
+		- SoulMap.Domain: geospatial/location entities.
+		- SoulMap.Infrastructure: DbContext, EF configurations, CSV seeder, module DI.
+		- SoulMap uses PostGIS-enabled persistence and is wired into global migrations.
+- Data schema strategy:
+	- Separate schemas by context:
+		- shared (implicit/default from SharedDbContext)
+		- marketplace
+		- social
+		- soulmap
+	- AppMigrationDbContext applies configurations from all context assemblies to maintain one migration stream.
+
+## 3. Coding Conventions & Standards
+- Language and style conventions observed:
+	- PascalCase for class, method, property, enum names.
+	- camelCase for parameters and locals.
+	- Private readonly fields use underscore prefix (for example: _mediator).
+	- Async methods end with Async in repositories/services, while controller actions follow IActionResult conventions.
+	- Mixed constructor styles are in use:
+		- Classic constructor injection.
+		- C# primary constructor syntax in some classes.
+- CQRS conventions:
+	- Command/Query objects implement IRequest<TResponse>.
+	- Handlers implement IRequestHandler<TRequest, TResponse>.
+	- Controllers should remain thin and call _mediator.Send(...).
+	- Validation is handled by FluentValidation pipeline behaviors registered per shared/module application setup.
+- Error handling conventions:
+	- Domain/application flows throw custom exceptions (BadRequestException, NotFoundException, ForbiddenException, etc.).
+	- GlobalExceptionMiddleware is the central place converting exceptions to HTTP response payloads.
+	- ValidationException is transformed to HTTP 400 with grouped field errors.
+- API response conventions currently used:
+	- Success paths often return result DTOs with Success + Message (+ payload fields).
+	- Error payload shape from middleware is:
+		- message: string
+		- errors: dictionary of string to string array
+	- Some endpoints return primitive/object payloads directly (for example boolean or anonymous object), so strict consistency is not universal yet.
+- Persistence and transaction conventions:
+	- EF Core DbContext per module.
+	- Repository pattern used heavily for writes and business operations.
+	- UnitOfWork + explicit transaction used for complex write workflows (notably order creation).
+	- Soft-delete flags are common on entities (IsDeleted) instead of hard delete.
+
+## 4. Core Models & Data Flow
+- User (Shared domain):
+	- Core identity entity with email/password/full profile fields.
+	- Tracks lifecycle flags (IsActive, IsEmailConfirmed, IsDeleted, IsGoogleAccount).
+	- Maintains SoulCoinBalance and user-role relationship.
+- MarketProduct (Marketplace domain):
+	- Commercial product managed by partner.
+	- Linked to category and includes pricing, promo pricing, stock, type, province metadata.
+	- Includes moderation and lifecycle flags (IsActive, IsVerifiedByAdmin, IsDeleted).
+	- Embeds media info in ProductMediaInfo.
+- MasterOrder and Order (Marketplace domain):
+	- MasterOrder represents one checkout/payment transaction for a user.
+	- Contains aggregated totals, platform voucher discount, payment method/status, SoulCoin usage.
+	- Owns multiple vendor-specific Order records (split by partner) with order items and shipping.
+- Post (Social domain):
+	- Social content root aggregate with user ownership, content, media URL list, vibe tag, optional check-in location.
+	- Maintains counters (likes/comments/shares) and status.
+	- Supports comments/likes relations and soft-delete.
+- Typical data flow:
+	- HTTP request enters Controller in API or module Presentation.
+	- Controller enriches request context (UserId, email, route IDs) and sends command/query via IMediator.
+	- Validator pipeline runs before handler logic.
+	- Handler executes domain logic via repositories/services/UoW (and occasionally direct DbContext in read queries).
+	- Handler returns result DTO; exceptions bubble up to GlobalExceptionMiddleware for standardized error payload conversion.
+
+## 5. Strict AI Rules (CRITICAL)
+- DO:
+	- Preserve Modular Monolith boundaries: keep code changes inside the correct module or shared layer.
+	- Keep controllers thin and delegate business logic through IMediator handlers.
+	- Add new use cases using CQRS structure:
+		- Feature folder
+		- Command or Query
+		- Handler
+		- Validator
+		- Result/DTO
+	- Use existing custom exception pattern and let GlobalExceptionMiddleware format error responses.
+	- Reuse existing repository/UoW abstractions for write-heavy workflows and transactional logic.
+	- Keep entity changes compatible with EF Core configurations and update migrations through AppMigrationDbContext.
+	- Follow existing naming conventions and async patterns.
+	- Use environment-variable based configuration style already used in appsettings and DI registration.
+	- Maintain schema separation and existing DbContext ownership by module.
+- DO NOT:
+	- Do not place business logic in controllers.
+	- Do not bypass MediatR pipeline for new domain features.
+	- Do not introduce cross-module direct data access that violates module boundaries.
+	- Do not return ad-hoc error shapes; rely on exception middleware output contract.
+	- Do not hard-delete entities that are currently soft-deleted by design unless explicitly required.
+	- Do not introduce a new architectural pattern (for example minimal APIs or direct service orchestration) for existing feature areas.
+	- Do not duplicate auth/token/session logic; extend existing shared auth services and repositories.
+	- Do not add direct SQL or EF tracking behavior changes in handlers without preserving transaction and consistency guarantees.
+	- Do not add new package dependencies when existing stack already covers the requirement unless there is a strong technical justification.
