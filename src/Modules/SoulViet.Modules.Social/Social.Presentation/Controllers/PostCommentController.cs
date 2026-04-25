@@ -1,15 +1,19 @@
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
 using SoulViet.Modules.Social.Social.Application.Features.PostComments.Commands.CreatePostComment;
 using SoulViet.Modules.Social.Social.Application.Features.PostComments.Commands.DeletePostComment;
 using SoulViet.Modules.Social.Social.Application.Features.PostComments.Commands.UpdatePostComment;
 using SoulViet.Modules.Social.Social.Application.Features.PostComments.Queries.GetPostCommentById;
+using SoulViet.Modules.Social.Social.Infrastructure.Services;
 using SoulViet.Modules.Social.Social.Presentation.Helpers;
 using Swashbuckle.AspNetCore.Annotations;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using SoulViet.Modules.Social.Social.Application.Interfaces.Services;
 
 namespace SoulViet.Modules.Social.Social.Presentation.Controllers
 {
@@ -19,10 +23,26 @@ namespace SoulViet.Modules.Social.Social.Presentation.Controllers
     public class PostCommentController : ControllerBase
     {
         private readonly IMediator _mediator;
+        private readonly SseConnectionManager _sseManager;
+        private readonly int _sseIdleTimeoutSeconds;
+        private readonly ICommentEventService _commentEventService;
+        private readonly SoulViet.Shared.Application.Interfaces.ICacheService _cacheService;
+        private readonly ILogger<PostCommentController> _logger;
 
-        public PostCommentController(IMediator mediator)
+        public PostCommentController(
+            IMediator mediator, 
+            SseConnectionManager sseManager, 
+            IConfiguration configuration,
+            ICommentEventService commentEventService,
+            SoulViet.Shared.Application.Interfaces.ICacheService cacheService,
+            ILogger<PostCommentController> logger)
         {
             _mediator = mediator;
+            _sseManager = sseManager;
+            _sseIdleTimeoutSeconds = configuration.GetValue<int>("Sse:IdleTimeoutSeconds", 60);
+            _commentEventService = commentEventService;
+            _cacheService = cacheService;
+            _logger = logger;
         }
         [HttpPost]
         [SwaggerOperation(
@@ -116,5 +136,59 @@ namespace SoulViet.Modules.Social.Social.Presentation.Controllers
             return Ok(result);
         }
 
+        [HttpGet("stream")]
+        [AllowAnonymous]
+        [SwaggerOperation(
+            Summary = "SSE comment stream",
+            Description = "Subscribe to real-time comment events for a post via Server-Sent Events."
+        )]
+        public async Task StreamComments([FromQuery] Guid postId, CancellationToken cancellationToken)
+        {
+            SseWriter.SetSseHeaders(Response);
+
+            using var idleCts = new CancellationTokenSource(TimeSpan.FromSeconds(_sseIdleTimeoutSeconds));
+            using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, idleCts.Token);
+
+            var client = new SseClient(Guid.NewGuid(), Response, linkedCts.Token);
+            _sseManager.AddClient(postId, client);
+            await _commentEventService.SubscribeAsync(postId);
+
+            try
+            {
+                await SseWriter.WriteKeepAliveAsync(Response);
+
+                // Fetch initial comments count
+                int initialCount = 0;
+                try
+                {
+                    var query = new SoulViet.Modules.Social.Social.Application.Features.Posts.Queries.GetPostById.GetPostByIdQuery { Id = postId };
+                    var post = await _mediator.Send(query, cancellationToken);
+                    initialCount = post?.CommentsCount ?? 0;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "[SSE:Comments] Failed to fetch initial comment count for postId={PostId}. Defaulting to 0.", postId);
+                    initialCount = 0;
+                }
+
+                var initialPayload = System.Text.Json.JsonSerializer.Serialize(new { 
+                    success = true, 
+                    commentsCount = initialCount, 
+                    postId = postId 
+                });
+                var initialId = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds().ToString();
+                await SseWriter.WriteEventAsync(Response, "comment", initialPayload, initialId);
+
+                await Task.Delay(Timeout.Infinite, linkedCts.Token);
+            }
+            catch (OperationCanceledException)
+            {
+            }
+            finally
+            {
+                _sseManager.RemoveClient(postId, client);
+                await _commentEventService.UnsubscribeAsync(postId);
+            }
+        }
     }
 }

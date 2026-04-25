@@ -3,6 +3,7 @@ using MediatR;
 using SoulViet.Modules.Social.Social.Application.Exceptions;
 using SoulViet.Modules.Social.Social.Application.Features.Posts.Results;
 using SoulViet.Modules.Social.Social.Application.Interfaces;
+using SoulViet.Modules.Social.Social.Application.Interfaces.Services;
 using SoulViet.Modules.Social.Social.Application.Interfaces.Repositories;
 
 namespace SoulViet.Modules.Social.Social.Application.Features.Posts.Commands.UpdatePost;
@@ -36,6 +37,7 @@ public class UpdatePostCommandHandler : IRequestHandler<UpdatePostCommand, PostR
 
         post.Content = request.Content;
         post.MediaUrls = request.MediaUrls ?? new List<string>();
+        post.TaggedProductIds = request.TaggedProductIds ?? new List<Guid>();
         post.VibeTag = request.VibeTag;
         post.CheckinLocationId = request.CheckinLocationId;
 

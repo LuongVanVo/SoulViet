@@ -5,12 +5,12 @@ namespace SoulViet.Modules.Social.Social.Application.Common.Pagination;
 public static class CursorHelper
 {
     private const char Delimiter = '|';
-    public static string Encode(Guid id, DateTime createdAt, string sortBy = "newest", int? likeCount = null)
+    public static string Encode(Guid id, DateTime createdAt, string sortBy = "newest", double? score = null)
     {
         var ticks = createdAt.ToUniversalTime().Ticks;
 
-        var raw = likeCount is not null
-            ? $"{sortBy}{Delimiter}{ticks}{Delimiter}{id:N}{Delimiter}{likeCount}"
+        var raw = score is not null
+            ? $"{sortBy}{Delimiter}{ticks}{Delimiter}{id:N}{Delimiter}{score}"
             : $"{sortBy}{Delimiter}{ticks}{Delimiter}{id:N}";
 
         var byteCount = Encoding.UTF8.GetByteCount(raw);
@@ -23,7 +23,7 @@ public static class CursorHelper
 
         return Base64Url.Encode(utf8);
     }
-    public static (Guid Id, DateTime CreatedAt, string SortBy, int? LikeCount)? Decode(string? cursor)
+    public static (Guid Id, DateTime CreatedAt, string SortBy, double? Score)? Decode(string? cursor)
     {
         if (string.IsNullOrWhiteSpace(cursor))
             return null;
@@ -45,7 +45,7 @@ public static class CursorHelper
 
         var sortBy = parts[0];
 
-        if (sortBy is not ("newest" or "oldest" or "top"))
+        if (sortBy is not ("newest" or "oldest" or "top" or "trending" or "nearby"))
             return null;
 
         if (!long.TryParse(parts[1], out var ticks))
@@ -57,16 +57,16 @@ public static class CursorHelper
         if (!Guid.TryParseExact(parts[2], "N", out var id))
             return null;
 
-        int? likeCount = null;
+        double? score = null;
 
         if (parts.Length == 4)
         {
-            if (!int.TryParse(parts[3], out var parsed) || parsed < 0)
+            if (!double.TryParse(parts[3], out var parsed))
                 return null;
 
-            likeCount = parsed;
+            score = parsed;
         }
 
-        return (id, new DateTime(ticks, DateTimeKind.Utc), sortBy, likeCount);
+        return (id, new DateTime(ticks, DateTimeKind.Utc), sortBy, score);
     }
 }

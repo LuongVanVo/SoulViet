@@ -48,7 +48,7 @@ public class PostCommentRepository : IPostCommentRepository
        string sortBy,
        Guid? cursorId,
        DateTime? cursorTime,
-       int? cursorLikeCount,
+       double? cursorScore,
        int limit,
        CancellationToken cancellationToken)
     {

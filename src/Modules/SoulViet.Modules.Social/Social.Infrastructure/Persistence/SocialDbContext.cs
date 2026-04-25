@@ -17,6 +17,7 @@ namespace SoulViet.Modules.Social.Social.Infrastructure.Persistence
         public DbSet<PostShare> PostShares { get; set; }
         public DbSet<UserFollower> UserFollowers { get; set; }
         public DbSet<Notification> Notifications { get; set; }
+        public DbSet<SocialComboExperience> SocialComboExperiences { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

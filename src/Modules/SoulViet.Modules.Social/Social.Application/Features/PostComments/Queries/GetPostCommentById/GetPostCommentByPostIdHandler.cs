@@ -1,6 +1,6 @@
-﻿using MediatR;
+using MediatR;
 using SoulViet.Modules.Social.Social.Application.DTOs;
-using SoulViet.Modules.Social.Social.Application.Interfaces;
+using SoulViet.Modules.Social.Social.Application.Interfaces.Services;
 using SoulViet.Modules.Social.Social.Application.Interfaces.Repositories;
 
 namespace SoulViet.Modules.Social.Social.Application.Features.PostComments.Queries.GetPostCommentById
@@ -30,7 +30,7 @@ namespace SoulViet.Modules.Social.Social.Application.Features.PostComments.Queri
                 Id = c.Id,
                 PostId = c.PostId,
                 UserId = c.UserId,
-                FullName = usersInfo.TryGetValue(c.UserId, out var user) ? user.FullName : "Người dùng ẩn danh",
+                FullName = usersInfo.TryGetValue(c.UserId, out var user) ? user.FullName : "Ngu?i d�ng ?n danh",
                 AvatarUrl = usersInfo.TryGetValue(c.UserId, out var u2) ? u2.AvatarUrl : null,
                 Content = c.Content,
                 CreatedAt = c.CreatedAt,

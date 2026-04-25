@@ -33,14 +33,14 @@ public class GetCommentRepliesQueryHandler : IRequestHandler<GetCommentRepliesQu
 
         Guid? cursorId = null;
         DateTime? cursorTime = null;
-        int? cursorLikeCount = null;
+        double? cursorScore = null;
         var decodedCursor = CursorHelper.Decode(request.After);
         if (decodedCursor.HasValue &&
             string.Equals(decodedCursor.Value.SortBy, request.SortBy, StringComparison.OrdinalIgnoreCase))
         {
             cursorId = decodedCursor.Value.Id;
             cursorTime = decodedCursor.Value.CreatedAt;
-            cursorLikeCount = decodedCursor.Value.LikeCount;
+            cursorScore = decodedCursor.Value.Score;
         }
 
         var (items, totalCount) = await _postCommentRepository.GetPagedAsync(
@@ -49,7 +49,7 @@ public class GetCommentRepliesQueryHandler : IRequestHandler<GetCommentRepliesQu
             sortBy: request.SortBy.ToLowerInvariant(),
             cursorId: cursorId,
             cursorTime: cursorTime,
-            cursorLikeCount: cursorLikeCount,
+            cursorScore: cursorScore,
             limit: request.First,
             cancellationToken: cancellationToken);
 

@@ -31,7 +31,7 @@ public class GetPostCommentsQueryHandler : IRequestHandler<GetPostCommentsQuery,
 
         Guid? cursorId = null;
         DateTime? cursorTime = null;
-        int? cursorLikeCount = null;
+        double? cursorScore = null;
 
         var decodedCursor = CursorHelper.Decode(request.After);
         if (decodedCursor.HasValue)
@@ -40,7 +40,7 @@ public class GetPostCommentsQueryHandler : IRequestHandler<GetPostCommentsQuery,
             {
                 cursorId = decodedCursor.Value.Id;
                 cursorTime = decodedCursor.Value.CreatedAt;
-                cursorLikeCount = decodedCursor.Value.LikeCount;
+                cursorScore = decodedCursor.Value.Score;
             }
         }
 
@@ -50,7 +50,7 @@ public class GetPostCommentsQueryHandler : IRequestHandler<GetPostCommentsQuery,
             request.SortBy.ToLowerInvariant(),
             cursorId,
             cursorTime,
-            cursorLikeCount,
+            cursorScore,
             request.First,
             cancellationToken);
 

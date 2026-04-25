@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using SoulViet.Modules.Social.Social.Application.Interfaces.Repositories;
 using SoulViet.Modules.Social.Social.Domain.Entities;
+using SoulViet.Shared.Domain.Enums;
 
 namespace SoulViet.Modules.Social.Social.Infrastructure.Persistence.Repositories;
 
@@ -16,6 +17,147 @@ public class PostRepository : IPostRepository
     public async Task<Post?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
     {
         return await _dbContext.Posts.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+    }
+    public async Task<(IEnumerable<Post> Items, int TotalCount)> GetPostsByUserIdAsync(Guid userId, int page, int pageSize, CancellationToken cancellationToken)
+    {
+        var query = _dbContext.Posts
+            .Where(p => p.UserId == userId && !p.IsDeleted && p.Status == PostStatus.Published) // Giả sử chỉ lấy post đã public
+            .OrderByDescending(p => p.CreatedAt);
+
+        var totalCount = await query.CountAsync(cancellationToken);
+
+        var items = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(cancellationToken);
+
+        return (items, totalCount);
+    }
+
+    public async Task<(List<Post> Items, int TotalCount)> GetPagedByUserIdAsync(
+        Guid userId,
+        string sortBy,
+        Guid? cursorId,
+        DateTime? cursorCreatedAt,
+        int limit,
+        CancellationToken cancellationToken)
+    {
+        var query = _dbContext.Posts
+            .Where(p => p.UserId == userId && !p.IsDeleted && p.Status == PostStatus.Published);
+
+        var totalCount = await query.CountAsync(cancellationToken);
+
+        if (cursorCreatedAt.HasValue && cursorId.HasValue)
+        {
+            if (sortBy == "newest")
+            {
+                query = query.Where(p => p.CreatedAt < cursorCreatedAt.Value ||
+                                         (p.CreatedAt == cursorCreatedAt.Value && p.Id.CompareTo(cursorId.Value) < 0));
+            }
+            else if (sortBy == "oldest")
+            {
+                query = query.Where(p => p.CreatedAt > cursorCreatedAt.Value ||
+                                         (p.CreatedAt == cursorCreatedAt.Value && p.Id.CompareTo(cursorId.Value) > 0));
+            }
+        }
+
+        if (sortBy == "newest")
+        {
+            query = query.OrderByDescending(p => p.CreatedAt).ThenByDescending(p => p.Id);
+        }
+        else
+        {
+            query = query.OrderBy(p => p.CreatedAt).ThenBy(p => p.Id);
+        }
+
+        var items = await query.Take(limit + 1).ToListAsync(cancellationToken);
+
+        return (items, totalCount);
+    }
+    public async Task<(List<Post> Items, int TotalCount)> GetDiscoveryPagedAsync(
+        List<Guid>? nearbyLocationIds,
+        VibeTag? vibeTag,
+        string sortBy,
+        Guid? cursorId,
+        DateTime? cursorCreatedAt,
+        double? cursorScore,
+        int limit,
+        CancellationToken cancellationToken)
+    {
+        var query = _dbContext.Posts
+            .Where(p => !p.IsDeleted && p.Status == PostStatus.Published);
+
+        if (vibeTag.HasValue)
+        {
+            query = query.Where(p => p.VibeTag == vibeTag.Value);
+        }
+
+        if (nearbyLocationIds != null && nearbyLocationIds.Count > 0)
+        {
+            query = query.Where(p => p.CheckinLocationId.HasValue && nearbyLocationIds.Contains(p.CheckinLocationId.Value));
+        }
+
+        var totalCount = await query.CountAsync(cancellationToken);
+
+        // Sorting & Ranking
+        if (sortBy == "trending")
+        {
+            // Score = (Likes + Comments*2 + Shares*3) / (AgeInHours + 2)^1.8
+            // Sử dụng TrendingScore nếu đã được tính toán, hoặc tính trực tiếp.
+            // Ở đây tôi sẽ tính trực tiếp để đảm bảo thời gian thực theo kế hoạch.
+            var now = DateTime.UtcNow;
+            
+            var rankedQuery = query.Select(p => new
+            {
+                Post = p,
+                Score = (p.LikesCount + p.CommentsCount * 2.0 + p.SharesCount * 3.0) / 
+                        Math.Pow((now - p.CreatedAt).TotalHours + 2, 1.8)
+            });
+
+            if (cursorScore.HasValue && cursorId.HasValue)
+            {
+                rankedQuery = rankedQuery.Where(x => x.Score < cursorScore.Value || 
+                                                    (Math.Abs(x.Score - cursorScore.Value) < 0.0001 && x.Post.Id.CompareTo(cursorId.Value) < 0));
+            }
+
+            var itemsWithScore = await rankedQuery
+                .OrderByDescending(x => x.Score)
+                .ThenByDescending(x => x.Post.Id)
+                .Take(limit + 1)
+                .ToListAsync(cancellationToken);
+
+            // Gán Score vào TrendingScore để dùng ở Handler encode cursor
+            foreach (var item in itemsWithScore)
+            {
+                item.Post.TrendingScore = item.Score;
+            }
+
+            return (itemsWithScore.Select(x => x.Post).ToList(), totalCount);
+        }
+        else if (sortBy == "nearby")
+        {
+            // Nếu sort by nearby, ưu tiên những post có CheckinLocationId (đã được filter ở trên)
+            // Sắp xếp theo mới nhất trong số các post gần đây
+            if (cursorCreatedAt.HasValue && cursorId.HasValue)
+            {
+                query = query.Where(p => p.CreatedAt < cursorCreatedAt.Value ||
+                                         (p.CreatedAt == cursorCreatedAt.Value && p.Id.CompareTo(cursorId.Value) < 0));
+            }
+
+            query = query.OrderByDescending(p => p.CreatedAt).ThenByDescending(p => p.Id);
+        }
+        else // newest
+        {
+            if (cursorCreatedAt.HasValue && cursorId.HasValue)
+            {
+                query = query.Where(p => p.CreatedAt < cursorCreatedAt.Value ||
+                                         (p.CreatedAt == cursorCreatedAt.Value && p.Id.CompareTo(cursorId.Value) < 0));
+            }
+            query = query.OrderByDescending(p => p.CreatedAt).ThenByDescending(p => p.Id);
+        }
+
+        var items = await query.Take(limit + 1).ToListAsync(cancellationToken);
+        return (items, totalCount);
     }
 
     public async Task AddAsync(Post post, CancellationToken cancellationToken)
