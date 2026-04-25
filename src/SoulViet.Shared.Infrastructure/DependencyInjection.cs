@@ -47,11 +47,14 @@ namespace SoulViet.Shared.Infrastructure
 
             services.AddTransient<ICacheService, CacheService>();
 
+            services.Configure<CloudflareR2Settings>(configuration.GetSection("CloudflareR2Settings"));
+
             // Register repositories and other services here
             services.AddHttpContextAccessor();
             services.AddSingleton<IJwtKeyProvider, RsaKeyProvider>();
             services.AddScoped<ITokenService, TokenService>();
             services.AddScoped<ICookieService, CookieService>();
+            services.AddScoped<ICloudflareR2Service, CloudflareR2Service>();
 
             var serviceProvider = services.BuildServiceProvider();
             var rsaKeyProvider = serviceProvider.GetRequiredService<IJwtKeyProvider>();

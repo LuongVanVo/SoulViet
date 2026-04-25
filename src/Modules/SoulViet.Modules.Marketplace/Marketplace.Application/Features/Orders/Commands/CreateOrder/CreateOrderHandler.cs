@@ -275,7 +275,7 @@ public class CreateOrderHandler(
                     UserId = request.UserId,
                     ReceiverName = request.ReceiverName,
                     ReceiverEmail = request.ReceiverEmail,
-                    GrandTotal = masterOrder.GrandTotal,
+                    GrandTotal = masterOrder.GrandTotal - masterOrder.SoulCoinUsed,
                     Language = userLanguage
                 }, cancellationToken);
 

@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using SoulViet.Modules.SoulMap.SoulMap.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using SoulViet.Modules.SoulMap.SoulMap.Infrastructure.Persistence.Seeder;
+using SoulViet.Modules.SoulMap.SoulMap.Application.Services;
 
 namespace SoulViet.Modules.SoulMap.SoulMap.Infrastructure
 {
@@ -10,20 +11,15 @@ namespace SoulViet.Modules.SoulMap.SoulMap.Infrastructure
     {
         public static IServiceCollection AddSoulMapModule(this IServiceCollection services, IConfiguration configuration)
         {
-            var rawDbConn = configuration.GetConnectionString("DefaultConnection");
-        
-            var dbConnection = rawDbConn!
-                .Replace("%DB_HOST%", Environment.GetEnvironmentVariable("DB_HOST"))
-                .Replace("%DB_PORT%", Environment.GetEnvironmentVariable("DB_PORT"))
-                .Replace("%DB_NAME%", Environment.GetEnvironmentVariable("DB_NAME"))
-                .Replace("%DB_USER%", Environment.GetEnvironmentVariable("DB_USER"))
-                .Replace("%DB_PASSWORD%", Environment.GetEnvironmentVariable("DB_PASSWORD"));
+            var rawDbConn = configuration.GetConnectionString("DefaultConnection") ?? Environment.GetEnvironmentVariable("DB_CONNECTION_STRING");
+            var dbConnection = Environment.ExpandEnvironmentVariables(rawDbConn ?? string.Empty);
 
             services.AddDbContext<SoulMapDbContext>(options => 
                 options.UseNpgsql(dbConnection, o => o.UseNetTopologySuite())
             );
 
             services.AddScoped<SoulMapDataSeeder>();
+            services.AddScoped<MediaMigrationService>();
 
             return services;
         }
