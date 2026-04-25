@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
+using StackExchange.Redis;
 using SoulViet.Shared.Application.Common.ExternalSettings;
 using SoulViet.Shared.Application.Interfaces;
 using SoulViet.Shared.Application.Interfaces.Repositories;
@@ -17,7 +18,7 @@ namespace SoulViet.Shared.Infrastructure
 {
     public static class DependencyInjection
     {
-        public static IServiceCollection AddSharedInfrastructure(this IServiceCollection services, IConfiguration configuration)
+        public static IServiceCollection AddSharedInfrastructure(this IServiceCollection services, IConfiguration configuration, Action<IBusRegistrationConfigurator>? additionalBusConfig = null)
         {
             var defaultConn = configuration.GetConnectionString("DefaultConnection");
 
@@ -34,6 +35,9 @@ namespace SoulViet.Shared.Infrastructure
             // Config redis cache
             var redisConn =
                 Environment.ExpandEnvironmentVariables(configuration["Redis:ConnectionString"] ?? "127.0.0.1:6381");
+
+            // Register IConnectionMultiplexer as singleton for atomic INCR/DECR operations
+            services.AddSingleton<IConnectionMultiplexer>(_ => ConnectionMultiplexer.Connect(redisConn));
 
             services.AddStackExchangeRedisCache(options =>
             {
@@ -59,6 +63,9 @@ namespace SoulViet.Shared.Infrastructure
                 x.AddConsumer<ForgotPasswordConsumer>();
                 x.AddConsumer<UserOrderCreatedConsumer>();
                 x.AddConsumer<PartnerOrderCreatedConsumer>();
+
+                // Allow other modules to register their consumers
+                additionalBusConfig?.Invoke(x);
 
                 x.UsingRabbitMq((context, cfg) =>
                 {
