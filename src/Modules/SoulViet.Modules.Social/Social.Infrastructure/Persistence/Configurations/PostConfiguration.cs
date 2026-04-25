@@ -1,3 +1,4 @@
+using SoulViet.Shared.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using SoulViet.Modules.Social.Social.Domain.Entities;
@@ -16,7 +17,6 @@ namespace SoulViet.Modules.Social.Social.Infrastructure.Persistence.Configuratio
 
             builder.Property(x => x.Content).IsRequired();
 
-            builder.Property(x => x.MediaUrls).HasColumnType("text[]");
             builder.Property(x => x.TaggedProductIds).HasColumnType("uuid[]");
 
             builder.Property(x => x.VibeTag).HasConversion<int>().IsRequired();

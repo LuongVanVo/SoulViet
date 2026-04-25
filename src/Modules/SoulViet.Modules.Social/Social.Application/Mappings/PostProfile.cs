@@ -11,5 +11,7 @@ public class PostProfile : Profile
     {
         CreateMap<Post, PostDto>();
         CreateMap<Post, PostResponse>();
+        CreateMap<PostMedia, MediaItemDto>();
+        CreateMap<PostMedia, MediaItemResponse>();
     }
 }

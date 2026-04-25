@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using SoulViet.Modules.Social.Social.Application.Interfaces.Repositories;
 using SoulViet.Modules.Social.Social.Domain.Entities;
+using SoulViet.Modules.Social.Social.Domain.Enums;
 using SoulViet.Shared.Domain.Enums;
 
 namespace SoulViet.Modules.Social.Social.Infrastructure.Persistence.Repositories;
@@ -16,7 +17,9 @@ public class PostRepository : IPostRepository
 
     public async Task<Post?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
     {
-        return await _dbContext.Posts.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+        return await _dbContext.Posts
+            .Include(x => x.Media)
+            .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
     }
     public async Task<(IEnumerable<Post> Items, int TotalCount)> GetPostsByUserIdAsync(Guid userId, int page, int pageSize, CancellationToken cancellationToken)
     {
@@ -102,9 +105,6 @@ public class PostRepository : IPostRepository
         // Sorting & Ranking
         if (sortBy == "trending")
         {
-            // Score = (Likes + Comments*2 + Shares*3) / (AgeInHours + 2)^1.8
-            // Sử dụng TrendingScore nếu đã được tính toán, hoặc tính trực tiếp.
-            // Ở đây tôi sẽ tính trực tiếp để đảm bảo thời gian thực theo kế hoạch.
             var now = DateTime.UtcNow;
             
             var rankedQuery = query.Select(p => new
@@ -126,7 +126,6 @@ public class PostRepository : IPostRepository
                 .Take(limit + 1)
                 .ToListAsync(cancellationToken);
 
-            // Gán Score vào TrendingScore để dùng ở Handler encode cursor
             foreach (var item in itemsWithScore)
             {
                 item.Post.TrendingScore = item.Score;
@@ -136,8 +135,7 @@ public class PostRepository : IPostRepository
         }
         else if (sortBy == "nearby")
         {
-            // Nếu sort by nearby, ưu tiên những post có CheckinLocationId (đã được filter ở trên)
-            // Sắp xếp theo mới nhất trong số các post gần đây
+
             if (cursorCreatedAt.HasValue && cursorId.HasValue)
             {
                 query = query.Where(p => p.CreatedAt < cursorCreatedAt.Value ||

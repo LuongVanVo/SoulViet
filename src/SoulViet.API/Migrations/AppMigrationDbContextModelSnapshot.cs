@@ -737,10 +737,6 @@ namespace SoulViet.API.Migrations
                         .HasColumnType("integer")
                         .HasDefaultValue(0);
 
-                    b.PrimitiveCollection<List<string>>("MediaUrls")
-                        .IsRequired()
-                        .HasColumnType("text[]");
-
                     b.Property<Guid?>("OriginalPostId")
                         .HasColumnType("uuid");
 
@@ -841,6 +837,54 @@ namespace SoulViet.API.Migrations
                     b.HasKey("PostId", "UserId");
 
                     b.ToTable("PostLikes", "social");
+                });
+
+            modelBuilder.Entity("SoulViet.Modules.Social.Social.Domain.Entities.PostMedia", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long?>("FileSizeBytes")
+                        .HasColumnType("bigint");
+
+                    b.Property<int?>("Height")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("MediaType")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("ObjectKey")
+                        .IsRequired()
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)");
+
+                    b.Property<Guid>("PostId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("SortOrder")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
+
+                    b.Property<string>("Url")
+                        .IsRequired()
+                        .HasMaxLength(2048)
+                        .HasColumnType("character varying(2048)");
+
+                    b.Property<int?>("Width")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PostId");
+
+                    b.HasIndex("PostId", "SortOrder");
+
+                    b.ToTable("PostMedia", "social");
                 });
 
             modelBuilder.Entity("SoulViet.Modules.Social.Social.Domain.Entities.PostShare", b =>
@@ -1676,6 +1720,15 @@ namespace SoulViet.API.Migrations
                     b.Navigation("Post");
                 });
 
+            modelBuilder.Entity("SoulViet.Modules.Social.Social.Domain.Entities.PostMedia", b =>
+                {
+                    b.HasOne("SoulViet.Modules.Social.Social.Domain.Entities.Post", null)
+                        .WithMany("Media")
+                        .HasForeignKey("PostId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("SoulViet.Modules.Social.Social.Domain.Entities.PostShare", b =>
                 {
                     b.HasOne("SoulViet.Modules.Social.Social.Domain.Entities.Post", "Post")
@@ -1852,6 +1905,8 @@ namespace SoulViet.API.Migrations
                     b.Navigation("Comments");
 
                     b.Navigation("Likes");
+
+                    b.Navigation("Media");
                 });
 
             modelBuilder.Entity("SoulViet.Modules.Social.Social.Domain.Entities.PostComment", b =>

@@ -1,3 +1,4 @@
+using SoulViet.Shared.Domain.Enums;
 using AutoMapper;
 using MediatR;
 using SoulViet.Modules.Social.Social.Application.Exceptions;
@@ -5,6 +6,8 @@ using SoulViet.Modules.Social.Social.Application.Features.Posts.Results;
 using SoulViet.Modules.Social.Social.Application.Interfaces;
 using SoulViet.Modules.Social.Social.Application.Interfaces.Services;
 using SoulViet.Modules.Social.Social.Application.Interfaces.Repositories;
+using SoulViet.Modules.Social.Social.Domain.Entities;
+using SoulViet.Modules.Social.Social.Domain.Enums;
 
 namespace SoulViet.Modules.Social.Social.Application.Features.Posts.Commands.UpdatePost;
 
@@ -36,10 +39,23 @@ public class UpdatePostCommandHandler : IRequestHandler<UpdatePostCommand, PostR
         }
 
         post.Content = request.Content;
-        post.MediaUrls = request.MediaUrls ?? new List<string>();
         post.TaggedProductIds = request.TaggedProductIds ?? new List<Guid>();
         post.VibeTag = request.VibeTag;
         post.CheckinLocationId = request.CheckinLocationId;
+        post.Media.Clear();
+        foreach (var m in request.Media)
+        {
+            post.Media.Add(new PostMedia
+            {
+                Url = m.Url,
+                MediaType = m.MediaType,
+                ObjectKey = m.ObjectKey,
+                Width = m.Width,
+                Height = m.Height,
+                FileSizeBytes = m.FileSizeBytes,
+                SortOrder = m.SortOrder
+            });
+        }
 
         _postRepository.Update(post);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
@@ -50,4 +66,3 @@ public class UpdatePostCommandHandler : IRequestHandler<UpdatePostCommand, PostR
         return response;
     }
 }
-
