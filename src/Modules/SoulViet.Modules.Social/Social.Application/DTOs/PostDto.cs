@@ -8,6 +8,7 @@ public class PostDto
     public Guid UserId { get; set; }
     public string Content { get; set; } = string.Empty;
     public List<string> MediaUrls { get; set; } = new();
+    public List<Guid> TaggedProductIds { get; set; } = new();
     public VibeTag VibeTag { get; set; }
     public Guid? CheckinLocationId { get; set; }
     public int LikesCount { get; set; }

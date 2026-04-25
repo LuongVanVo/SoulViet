@@ -2,6 +2,7 @@ using AutoMapper;
 using MediatR;
 using SoulViet.Modules.Social.Social.Application.Features.Posts.Results;
 using SoulViet.Modules.Social.Social.Application.Interfaces;
+using SoulViet.Modules.Social.Social.Application.Interfaces.Services;
 using SoulViet.Modules.Social.Social.Application.Interfaces.Repositories;
 using SoulViet.Modules.Social.Social.Domain.Entities;
 using SoulViet.Shared.Domain.Enums;
@@ -28,6 +29,7 @@ public class CreatePostCommandHandler : IRequestHandler<CreatePostCommand, PostR
             UserId = request.UserId,
             Content = request.Content,
             MediaUrls = request.MediaUrls ?? new List<string>(),
+            TaggedProductIds = request.TaggedProductIds ?? new List<Guid>(),
             VibeTag = request.VibeTag,
             CheckinLocationId = request.CheckinLocationId,
             LikesCount = 0,

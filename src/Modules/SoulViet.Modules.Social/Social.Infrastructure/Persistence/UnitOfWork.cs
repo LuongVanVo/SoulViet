@@ -1,4 +1,5 @@
 using SoulViet.Modules.Social.Social.Application.Interfaces;
+using SoulViet.Modules.Social.Social.Application.Interfaces.Services;
 
 namespace SoulViet.Modules.Social.Social.Infrastructure.Persistence;
 

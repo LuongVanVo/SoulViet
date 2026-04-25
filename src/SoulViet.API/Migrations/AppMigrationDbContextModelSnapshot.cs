@@ -741,6 +741,9 @@ namespace SoulViet.API.Migrations
                         .IsRequired()
                         .HasColumnType("text[]");
 
+                    b.Property<Guid?>("OriginalPostId")
+                        .HasColumnType("uuid");
+
                     b.Property<int>("SharesCount")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
@@ -748,6 +751,13 @@ namespace SoulViet.API.Migrations
 
                     b.Property<int>("Status")
                         .HasColumnType("integer");
+
+                    b.PrimitiveCollection<List<Guid>>("TaggedProductIds")
+                        .IsRequired()
+                        .HasColumnType("uuid[]");
+
+                    b.Property<double>("TrendingScore")
+                        .HasColumnType("double precision");
 
                     b.Property<Guid>("UserId")
                         .HasColumnType("uuid");
@@ -866,6 +876,9 @@ namespace SoulViet.API.Migrations
                     b.Property<Guid>("PostId")
                         .HasColumnType("uuid");
 
+                    b.Property<int>("ShareType")
+                        .HasColumnType("integer");
+
                     b.Property<Guid>("UserId")
                         .HasColumnType("uuid");
 
@@ -878,6 +891,66 @@ namespace SoulViet.API.Migrations
                     b.HasIndex("PostId", "UserId", "CreatedAt");
 
                     b.ToTable("PostShares", "social");
+                });
+
+            modelBuilder.Entity("SoulViet.Modules.Social.Social.Domain.Entities.SocialComboExperience", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("GuideId")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
+                    b.Property<DateTime?>("LastModifiedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("LastModifiedBy")
+                        .HasColumnType("text");
+
+                    b.PrimitiveCollection<List<string>>("MediaUrls")
+                        .IsRequired()
+                        .HasColumnType("text[]");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<decimal>("Price")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal?>("PromotionalPrice")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<Guid>("ServicePartnerId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("GuideId");
+
+                    b.HasIndex("ServicePartnerId");
+
+                    b.ToTable("SocialComboExperiences", "social");
                 });
 
             modelBuilder.Entity("SoulViet.Modules.Social.Social.Domain.Entities.UserFollower", b =>

@@ -1,4 +1,4 @@
-﻿using SoulViet.Modules.Social.Social.Domain.Entities;
+using SoulViet.Modules.Social.Social.Domain.Entities;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -18,7 +18,7 @@ namespace SoulViet.Modules.Social.Social.Application.Interfaces.Repositories
             string sortBy,
             Guid? cursorId,
             DateTime? cursorTime,
-            int? cursorLikeCount,
+            double? cursorScore,
             int limit,
             CancellationToken cancellationToken);
     }
