@@ -1,4 +1,4 @@
-﻿using System.Net;
+using System.Net;
 using Amazon.S3;
 using Amazon.S3.Model;
 using Microsoft.AspNetCore.Http;
@@ -8,12 +8,14 @@ using SoulViet.Shared.Application.DTOs.Media;
 using SoulViet.Shared.Application.Exceptions;
 using SoulViet.Shared.Application.Interfaces;
 
+using SoulViet.Shared.Domain.Enums;
+
 namespace SoulViet.Shared.Infrastructure.Services;
 
 public class CloudflareR2Service : ICloudflareR2Service
 {
-    private readonly string[] _allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif", ".webp" };
-    private readonly long _maxFileSize = 10 * 1024 * 1024; // 10 MB
+    private readonly string[] _allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif", ".webp", ".mp4", ".mov", ".avi", ".mkv" };
+    private readonly long _maxFileSize = 100 * 1024 * 1024; // 100 MB for general/video
     private readonly IAmazonS3 _s3Client;
     private readonly CloudflareR2Settings _cloudflareR2Settings;
     public CloudflareR2Service(IOptions<CloudflareR2Settings> options)
@@ -63,6 +65,10 @@ public class CloudflareR2Service : ICloudflareR2Service
             var uniqueFileName = $"{Guid.NewGuid()}{extension}";
             var objectKey = string.IsNullOrEmpty(folderName) ? uniqueFileName : $"{folderName}/{uniqueFileName}";
 
+            var mediaType = extension == ".mp4" || extension == ".mov" || extension == ".avi" || extension == ".mkv"
+                ? MediaType.Video
+                : MediaType.Image;
+
             // Sinh Presigned URL (giống logic hàm đơn lẻ)
             var request = new GetPreSignedUrlRequest
             {
@@ -80,7 +86,8 @@ public class CloudflareR2Service : ICloudflareR2Service
                 FileName = file.FileName,
                 UploadUrl = _s3Client.GetPreSignedURL(request),
                 PublicUrl = $"{_cloudflareR2Settings.PublicDomain}/{objectKey}",
-                ObjectKey = objectKey
+                ObjectKey = objectKey,
+                MediaType = mediaType
             });
         }
 

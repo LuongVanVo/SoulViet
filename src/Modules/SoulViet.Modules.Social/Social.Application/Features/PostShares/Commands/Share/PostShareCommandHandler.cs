@@ -1,9 +1,10 @@
 using MassTransit;
 using MediatR;
 using SoulViet.Shared.Application.Common.Events;
+using SoulViet.Shared.Domain.Enums;
 using SoulViet.Shared.Application.Exceptions;
 using SoulViet.Shared.Application.Interfaces;
-using SoulViet.Shared.Domain.Enums;
+using SoulViet.Modules.Social.Social.Domain.Enums;
 using SoulViet.Modules.Social.Social.Application.Interfaces;
 using SoulViet.Modules.Social.Social.Application.Interfaces.Services;
 using SoulViet.Modules.Social.Social.Application.Interfaces.Repositories;

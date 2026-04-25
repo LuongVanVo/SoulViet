@@ -1,9 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
 using System.ComponentModel;
-using System.Text;
 
-namespace SoulViet.Shared.Domain.Enums
+namespace SoulViet.Modules.Social.Social.Domain.Enums
 {
     public enum PostStatus
     {

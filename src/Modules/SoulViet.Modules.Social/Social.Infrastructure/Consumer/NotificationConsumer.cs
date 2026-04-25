@@ -1,3 +1,4 @@
+using SoulViet.Shared.Domain.Enums;
 using MassTransit;
 using SoulViet.Shared.Application.Common.Events;
 using SoulViet.Modules.Social.Social.Application.Interfaces.Services;

@@ -1,3 +1,4 @@
+using SoulViet.Shared.Domain.Enums;
 using AutoMapper;
 using MediatR;
 using SoulViet.Modules.Social.Social.Application.Common.Pagination;

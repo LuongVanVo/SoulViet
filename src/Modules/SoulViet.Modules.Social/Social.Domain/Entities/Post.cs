@@ -1,4 +1,5 @@
 using SoulViet.Modules.Social.Social.Domain.Common;
+using SoulViet.Modules.Social.Social.Domain.Enums;
 using SoulViet.Shared.Domain.Enums;
 
 namespace SoulViet.Modules.Social.Social.Domain.Entities
@@ -7,7 +8,6 @@ namespace SoulViet.Modules.Social.Social.Domain.Entities
     {
         public Guid UserId { get; set; }
         public string Content { get; set; } = string.Empty;
-        public List<string> MediaUrls { get; set; } = new();
         public List<Guid> TaggedProductIds { get; set; } = new();
         public VibeTag VibeTag { get; set; }
 
@@ -22,6 +22,7 @@ namespace SoulViet.Modules.Social.Social.Domain.Entities
 
         public List<PostComment> Comments { get; set; } = new();
         public List<PostLike> Likes { get; set; } = new();
+        public ICollection<PostMedia> Media { get; set; } = new List<PostMedia>();
 
         public bool IsDeleted { get; set; } = false;
     }
