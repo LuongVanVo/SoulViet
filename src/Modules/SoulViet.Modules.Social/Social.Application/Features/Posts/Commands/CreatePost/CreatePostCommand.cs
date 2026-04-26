@@ -8,10 +8,11 @@ namespace SoulViet.Modules.Social.Social.Application.Features.Posts.Commands.Cre
 public class CreatePostCommand : IRequest<PostResponse>
 {
     public Guid UserId { get; set; }
-    public string Content { get; set; } = string.Empty;
+    public string? Content { get; set; }
     public List<MediaUploadRequest> Media { get; set; } = new();
     public List<Guid> TaggedProductIds { get; set; } = new();
     public VibeTag VibeTag { get; set; }
     public Guid? CheckinLocationId { get; set; }
+    public string? AspectRatio { get; set; }
 }
 

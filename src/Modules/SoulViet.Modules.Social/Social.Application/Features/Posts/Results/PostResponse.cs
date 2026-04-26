@@ -10,11 +10,12 @@ public class PostResponse
     public string Message { get; set; } = string.Empty;
     public Guid Id { get; set; }
     public Guid UserId { get; set; }
-    public string Content { get; set; } = string.Empty;
+    public string? Content { get; set; }
     public List<MediaItemResponse> Media { get; set; } = new();
     public List<Guid> TaggedProductIds { get; set; } = new();
     public VibeTag VibeTag { get; set; }
     public Guid? CheckinLocationId { get; set; }
+    public string? AspectRatio { get; set; }
     public int LikesCount { get; set; }
     public int CommentsCount { get; set; }
     public int SharesCount { get; set; }

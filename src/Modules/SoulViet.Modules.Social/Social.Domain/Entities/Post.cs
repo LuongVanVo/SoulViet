@@ -7,7 +7,7 @@ namespace SoulViet.Modules.Social.Social.Domain.Entities
     public class Post : BaseAuditableEntity
     {
         public Guid UserId { get; set; }
-        public string Content { get; set; } = string.Empty;
+        public string? Content { get; set; }
         public List<Guid> TaggedProductIds { get; set; } = new();
         public VibeTag VibeTag { get; set; }
 
@@ -19,11 +19,11 @@ namespace SoulViet.Modules.Social.Social.Domain.Entities
         public int SharesCount { get; set; } = 0;
         public PostStatus Status { get; set; } = PostStatus.Draft;
         public double TrendingScore { get; set; } = 0;
+        public string? AspectRatio { get; set; } // horizontal, vertical, square
 
         public List<PostComment> Comments { get; set; } = new();
         public List<PostLike> Likes { get; set; } = new();
         public ICollection<PostMedia> Media { get; set; } = new List<PostMedia>();
-
         public bool IsDeleted { get; set; } = false;
     }
 }

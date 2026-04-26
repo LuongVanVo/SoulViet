@@ -28,4 +28,5 @@ public interface IPostRepository
     Task AddAsync(Post post, CancellationToken cancellationToken);
     void Update(Post post);
     Task SoftDeleteAsync(Post post, CancellationToken cancellationToken);
+    void RemoveMedia(IEnumerable<PostMedia> media);
 }
