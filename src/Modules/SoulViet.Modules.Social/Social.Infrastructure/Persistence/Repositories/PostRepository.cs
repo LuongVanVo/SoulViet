@@ -15,15 +15,16 @@ public class PostRepository : IPostRepository
         _dbContext = dbContext;
     }
 
-    public async Task<Post?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
+    public async Task<Post?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         return await _dbContext.Posts
-            .Include(x => x.Media)
-            .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+            .Include(p => p.Media)
+            .FirstOrDefaultAsync(p => p.Id == id, cancellationToken);
     }
     public async Task<(IEnumerable<Post> Items, int TotalCount)> GetPostsByUserIdAsync(Guid userId, int page, int pageSize, CancellationToken cancellationToken)
     {
         var query = _dbContext.Posts
+            .Include(p => p.Media)
             .Where(p => p.UserId == userId && !p.IsDeleted && p.Status == PostStatus.Published) // Giả sử chỉ lấy post đã public
             .OrderByDescending(p => p.CreatedAt);
 
@@ -46,6 +47,7 @@ public class PostRepository : IPostRepository
         CancellationToken cancellationToken)
     {
         var query = _dbContext.Posts
+            .Include(p => p.Media)
             .Where(p => p.UserId == userId && !p.IsDeleted && p.Status == PostStatus.Published);
 
         var totalCount = await query.CountAsync(cancellationToken);
@@ -88,6 +90,7 @@ public class PostRepository : IPostRepository
         CancellationToken cancellationToken)
     {
         var query = _dbContext.Posts
+            .Include(p => p.Media)
             .Where(p => !p.IsDeleted && p.Status == PostStatus.Published);
 
         if (vibeTag.HasValue)
@@ -173,6 +176,11 @@ public class PostRepository : IPostRepository
         post.IsDeleted = true;
         _dbContext.Posts.Update(post);
         return Task.CompletedTask;
+    }
+
+    public void RemoveMedia(IEnumerable<PostMedia> media)
+    {
+        _dbContext.PostMedia.RemoveRange(media);
     }
 }
 

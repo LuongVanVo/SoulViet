@@ -10,7 +10,6 @@ public class UpdatePostCommandValidator : AbstractValidator<UpdatePostCommand>
             .NotEmpty().WithMessage("Post Id cannot be empty.");
 
         RuleFor(x => x.Content)
-            .NotEmpty().WithMessage("Content cannot be empty.")
             .MaximumLength(5000).WithMessage("Content cannot exceed 5000 characters.");
 
         RuleForEach(x => x.Media)

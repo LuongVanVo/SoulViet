@@ -703,6 +703,12 @@ namespace SoulViet.API.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<string>("AspectRatio")
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasDefaultValue("square");
+
                     b.Property<Guid?>("CheckinLocationId")
                         .HasColumnType("uuid");
 
@@ -712,7 +718,6 @@ namespace SoulViet.API.Migrations
                         .HasDefaultValue(0);
 
                     b.Property<string>("Content")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<DateTime>("CreatedAt")

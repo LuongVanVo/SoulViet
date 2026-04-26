@@ -42,6 +42,7 @@ public class CreatePostCommandHandler : IRequestHandler<CreatePostCommand, PostR
             TaggedProductIds = request.TaggedProductIds ?? new List<Guid>(),
             VibeTag = request.VibeTag,
             CheckinLocationId = request.CheckinLocationId,
+            AspectRatio = request.AspectRatio,
             LikesCount = 0,
             CommentsCount = 0,
             SharesCount = 0,

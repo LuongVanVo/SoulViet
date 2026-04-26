@@ -39,25 +39,64 @@ public class UpdatePostCommandHandler : IRequestHandler<UpdatePostCommand, PostR
         }
 
         post.Content = request.Content;
-        post.TaggedProductIds = request.TaggedProductIds ?? new List<Guid>();
         post.VibeTag = request.VibeTag;
         post.CheckinLocationId = request.CheckinLocationId;
-        post.Media.Clear();
-        foreach (var m in request.Media)
+        post.AspectRatio = request.AspectRatio;
+        post.TaggedProductIds = request.TaggedProductIds ?? new List<Guid>();
+        
+        if (request.Media != null)
         {
-            post.Media.Add(new PostMedia
+            var requestedUrls = request.Media.Where(m => !string.IsNullOrWhiteSpace(m.Url)).Select(m => m.Url).ToList();
+            var mediaToRemove = post.Media.Where(m => !requestedUrls.Contains(m.Url)).ToList();
+            
+            if (mediaToRemove.Any())
             {
-                Url = m.Url,
-                MediaType = m.MediaType,
-                ObjectKey = m.ObjectKey,
-                Width = m.Width,
-                Height = m.Height,
-                FileSizeBytes = m.FileSizeBytes,
-                SortOrder = m.SortOrder
-            });
+                foreach (var m in mediaToRemove)
+                {
+                    post.Media.Remove(m);
+                }
+            }
+
+            foreach (var m in request.Media)
+            {
+                if (string.IsNullOrWhiteSpace(m.Url)) continue;
+
+                var existingMedia = post.Media.FirstOrDefault(x => x.Url == m.Url);
+                if (existingMedia != null)
+                {
+                    existingMedia.SortOrder = m.SortOrder;
+                    existingMedia.MediaType = m.MediaType;
+                    existingMedia.ObjectKey = string.IsNullOrWhiteSpace(m.ObjectKey) ? existingMedia.ObjectKey : m.ObjectKey;
+                    existingMedia.Width = m.Width;
+                    existingMedia.Height = m.Height;
+                    existingMedia.FileSizeBytes = m.FileSizeBytes;
+                }
+                else
+                {
+                    // Add new
+                    post.Media.Add(new PostMedia
+                    {
+                        Id = Guid.Empty, 
+                        PostId = post.Id,
+                        Url = m.Url,
+                        MediaType = m.MediaType,
+                        ObjectKey = m.ObjectKey ?? string.Empty,
+                        Width = m.Width,
+                        Height = m.Height,
+                        FileSizeBytes = m.FileSizeBytes,
+                        SortOrder = m.SortOrder
+                    });
+                }
+            }
+        }
+        else
+        {
+            if (post.Media.Any())
+            {
+                post.Media.Clear();
+            }
         }
 
-        _postRepository.Update(post);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         var response = _mapper.Map<PostResponse>(post);
