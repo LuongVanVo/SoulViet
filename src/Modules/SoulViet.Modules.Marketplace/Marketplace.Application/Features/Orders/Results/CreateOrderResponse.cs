@@ -8,5 +8,6 @@ public class CreateOrderResponse
     public decimal GrandTotal { get; set; }
     public string? PaymentUrl { get; set; }
     public bool SoulCoinUsed { get; set; }
+    public decimal SoulCoinAmount { get; set; }
     public decimal FinalPayableAmount { get; set; }
 }

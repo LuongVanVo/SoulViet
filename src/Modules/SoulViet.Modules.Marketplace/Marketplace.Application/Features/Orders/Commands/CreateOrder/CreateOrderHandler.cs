@@ -2,6 +2,7 @@
 using MassTransit;
 using MediatR;
 using Microsoft.AspNetCore.Http;
+using SoulViet.Modules.Marketplace.Marketplace.Application.Common.Events;
 using SoulViet.Modules.Marketplace.Marketplace.Application.Exceptions;
 using SoulViet.Modules.Marketplace.Marketplace.Application.Features.Orders.Results;
 using SoulViet.Modules.Marketplace.Marketplace.Application.Interfaces;
@@ -113,6 +114,7 @@ public class CreateOrderHandler(
                         ProductId = product.Id,
                         ProductNameSnapshot = product.Name,
                         ProductImageSnapshot = product.Media.MainImage ?? "",
+                        ProductTypeSnapshot = product.ProductType,
                         Quantity = cartItem.Quantity,
                         UnitPrice = product.PromotionalPrice ?? product.Price,
                         ItemMetadata = cartItem.ItemMetadata,
@@ -224,6 +226,11 @@ public class CreateOrderHandler(
                 {
                     vendorOrder.Status = OrderStatus.Processing;
                 }
+
+                await _publishEndpoint.Publish(new OrderPaymentSuccessEvent
+                {
+                    MasterOrderId = masterOrder.Id,
+                }, cancellationToken);
             }
 
             // 4. Save to database
@@ -310,6 +317,7 @@ public class CreateOrderHandler(
                 GrandTotal = masterOrder.GrandTotal,
                 PaymentUrl = paymentUrl,
                 SoulCoinUsed = request.UseSoulCoin,
+                SoulCoinAmount = soulCoinToUse,
                 FinalPayableAmount = masterOrder.FinalPayableAmount
             };
         }

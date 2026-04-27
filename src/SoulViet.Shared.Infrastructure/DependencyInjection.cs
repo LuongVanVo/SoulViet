@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
+using SoulViet.Modules.Marketplace.Marketplace.Infrastructure.Consumer;
 using StackExchange.Redis;
 using SoulViet.Shared.Application.Common.ExternalSettings;
 using SoulViet.Shared.Application.Interfaces;
@@ -66,6 +67,7 @@ namespace SoulViet.Shared.Infrastructure
                 x.AddConsumer<ForgotPasswordConsumer>();
                 x.AddConsumer<UserOrderCreatedConsumer>();
                 x.AddConsumer<PartnerOrderCreatedConsumer>();
+                x.AddConsumer<OrderPaymentSuccessConsumer>();
 
                 // Allow other modules to register their consumers
                 additionalBusConfig?.Invoke(x);

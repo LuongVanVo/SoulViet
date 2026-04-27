@@ -1,8 +1,10 @@
 ﻿using System.Globalization;
+using MassTransit;
 using MediatR;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using SoulViet.Modules.Marketplace.Marketplace.Application.Common.Events;
 using SoulViet.Modules.Marketplace.Marketplace.Application.Features.Orders.Results;
 using SoulViet.Modules.Marketplace.Marketplace.Application.Interfaces;
 using SoulViet.Modules.Marketplace.Marketplace.Application.Interfaces.Repositories;
@@ -17,12 +19,14 @@ public class ProcessVnPayIpnHandler : IRequestHandler<ProcessVnPayIpnCommand, Vn
     private readonly IUnitOfWork _unitOfWork;
     private readonly VnPayConfig _vnPayConfig;
     private readonly ILogger<ProcessVnPayIpnHandler> _logger;
-    public ProcessVnPayIpnHandler(IMasterOrderRepository masterOrderRepository, IUnitOfWork unitOfWork, IOptions<VnPayConfig> vnPayConfig, ILogger<ProcessVnPayIpnHandler> logger)
+    private readonly IPublishEndpoint _publishEndpoint;
+    public ProcessVnPayIpnHandler(IMasterOrderRepository masterOrderRepository, IUnitOfWork unitOfWork, IOptions<VnPayConfig> vnPayConfig, ILogger<ProcessVnPayIpnHandler> logger, IPublishEndpoint publishEndpoint)
     {
         _masterOrderRepository = masterOrderRepository;
         _unitOfWork = unitOfWork;
         _vnPayConfig = vnPayConfig.Value;
         _logger = logger;
+        _publishEndpoint = publishEndpoint;
     }
 
     public async Task<VnPayIpnResponse> Handle(ProcessVnPayIpnCommand request, CancellationToken cancellationToken)
@@ -63,7 +67,7 @@ public class ProcessVnPayIpnHandler : IRequestHandler<ProcessVnPayIpnCommand, Vn
             }
 
             long vnpAmount = Convert.ToInt64(vnp_Amount) / 100;
-            if (masterOrder.GrandTotal != vnpAmount)
+            if (masterOrder.FinalPayableAmount != vnpAmount)
             {
                 return new VnPayIpnResponse { RspCode = "04", Message = "Invalid amount" };
             }
@@ -95,6 +99,12 @@ public class ProcessVnPayIpnHandler : IRequestHandler<ProcessVnPayIpnCommand, Vn
                 {
                     vendorOrder.Status = OrderStatus.Processing;
                 }
+
+                await _publishEndpoint.Publish(new OrderPaymentSuccessEvent()
+                {
+                    MasterOrderId = masterOrder.Id
+                }, cancellationToken);
+
                 _logger.LogInformation("VNPay IPN: Successfully processed Order {OrderId}", realOrderId);
             }
             else

@@ -50,6 +50,9 @@ namespace SoulViet.Modules.Marketplace.Marketplace.Infrastructure
             services.AddScoped<IMasterOrderRepository, MasterOrderRepository>();
             services.AddScoped<IOrderRepository, OrderRepository>();
             services.AddScoped<ISoulCoinTransactionRepository, SoulCoinTransactionRepository>();
+            services.AddScoped<IOrderItemRepository, OrderItemRepository>();
+            services.AddScoped<ITicketOrchestrator, TicketOrchestrator>();
+            services.AddScoped<ITicketService, TicketService>();
 
             // Hangfire
             services.AddHangfire(config => config

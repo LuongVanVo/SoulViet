@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using SoulViet.Modules.Marketplace.Marketplace.Application.Features.Orders.Commands.CancelOrder;
 using SoulViet.Modules.Marketplace.Marketplace.Application.Features.Orders.Commands.CreateOrder;
 using SoulViet.Modules.Marketplace.Marketplace.Application.Features.Orders.Commands.ProcessVnPayIpn;
+using SoulViet.Modules.Marketplace.Marketplace.Application.Features.Orders.Commands.ScanTicket;
 using SoulViet.Modules.Marketplace.Marketplace.Application.Features.Orders.Commands.UpdateOrderStatus;
 using SoulViet.Modules.Marketplace.Marketplace.Application.Features.Orders.Queries.GetAdminMasterOrderDetail;
 using SoulViet.Modules.Marketplace.Marketplace.Application.Features.Orders.Queries.GetAllOrdersForAdmin;
@@ -243,6 +244,20 @@ public class OrderController : ControllerBase
         };
 
         var result = await _mediator.Send(query);
+        return Ok(result);
+    }
+
+    [Authorize(Roles = ("LocalPartner"))]
+    [HttpPost("scan")]
+    [SwaggerOperation(Summary = "Scan QR code to check-in service orders of a local partner",
+        Description =
+            "Allows local partners to scan a QR code associated with a service order to check-in and mark the service as used, providing a seamless way to manage service orders and track their usage in real-time.")]
+    public async Task<IActionResult> ScanTicket([FromBody] ScanTicketCommand command)
+    {
+        var partnerId = User.GetCurrentUserId();
+        command.PartnerId = partnerId;
+
+        var result = await _mediator.Send(command);
         return Ok(result);
     }
 }

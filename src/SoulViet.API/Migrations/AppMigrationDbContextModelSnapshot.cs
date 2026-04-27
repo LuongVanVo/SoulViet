@@ -397,6 +397,9 @@ namespace SoulViet.API.Migrations
                     b.Property<string>("CreatedBy")
                         .HasColumnType("text");
 
+                    b.Property<bool>("IsTicketUsed")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("ItemMetadata")
                         .HasColumnType("jsonb");
 
@@ -428,8 +431,20 @@ namespace SoulViet.API.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)");
 
+                    b.Property<int>("ProductTypeSnapshot")
+                        .HasColumnType("integer");
+
                     b.Property<int>("Quantity")
                         .HasColumnType("integer");
+
+                    b.Property<string>("TicketCode")
+                        .HasColumnType("text");
+
+                    b.Property<string>("TicketQRUrl")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("TicketUsedDate")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<decimal>("UnitPrice")
                         .HasColumnType("decimal(18,2)");
@@ -437,6 +452,8 @@ namespace SoulViet.API.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("OrderId");
+
+                    b.HasIndex("TicketCode");
 
                     b.ToTable("OrderItems", "marketplace");
                 });
