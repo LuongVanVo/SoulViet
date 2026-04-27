@@ -11,6 +11,8 @@ namespace SoulViet.Modules.Marketplace.Marketplace.Infrastructure.Persistence.Co
             builder.ToTable("OrderItems", "marketplace");
             builder.HasKey(x => x.Id);
 
+            builder.HasIndex(x => x.TicketCode);
+
             builder.Property(x => x.OrderId).IsRequired();
             builder.Property(x => x.ProductId).IsRequired();
 

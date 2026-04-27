@@ -26,6 +26,7 @@
   <ItemGroup>
     <ProjectReference Include="..\SoulViet.Shared.Domain\SoulViet.Shared.Domain.csproj" />
     <ProjectReference Include="..\SoulViet.Shared.Application\SoulViet.Shared.Application.csproj" />
+    <ProjectReference Include="..\Modules\SoulViet.Modules.Marketplace\SoulViet.Modules.Marketplace.csproj" />
   </ItemGroup>
 
 </Project>

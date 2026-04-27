@@ -1,4 +1,5 @@
 using SoulViet.Modules.Marketplace.Marketplace.Domain.Common;
+using SoulViet.Modules.Marketplace.Marketplace.Domain.Enums;
 
 namespace SoulViet.Modules.Marketplace.Marketplace.Domain.Entities
 {
@@ -20,7 +21,11 @@ namespace SoulViet.Modules.Marketplace.Marketplace.Domain.Entities
         public decimal CommissionRate { get; set; } // % Hoa hồng lúc mua 
         public decimal PlatformFee { get; set; } // Phí nền tảng
         public decimal PartnerEarnings { get; set; }
-
+        public string? TicketCode { get; set; }  // Nếu là vé điện tử thì lưu mã vé ở đây
+        public string? TicketQRUrl { get; set; } // Link QR code saved in cloud storage
+        public ProductType ProductTypeSnapshot { get; set; }
+        public bool IsTicketUsed { get; set; } = false;
+        public DateTime? TicketUsedDate { get; set; }
         public Order Order { get; set; } = null!;
     }
 }
