@@ -397,6 +397,11 @@ namespace SoulViet.API.Migrations
                     b.Property<string>("CreatedBy")
                         .HasColumnType("text");
 
+                    b.Property<bool>("IsSettled")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
                     b.Property<bool>("IsTicketUsed")
                         .HasColumnType("boolean");
 
@@ -414,6 +419,9 @@ namespace SoulViet.API.Migrations
 
                     b.Property<decimal>("PartnerEarnings")
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<Guid?>("PayoutBatchId")
+                        .HasColumnType("uuid");
 
                     b.Property<decimal>("PlatformFee")
                         .HasColumnType("decimal(18,2)");
@@ -452,6 +460,8 @@ namespace SoulViet.API.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("OrderId");
+
+                    b.HasIndex("PayoutBatchId");
 
                     b.HasIndex("TicketCode");
 
@@ -509,6 +519,63 @@ namespace SoulViet.API.Migrations
                     b.HasIndex("MasterOrderId");
 
                     b.ToTable("PaymentTransactions", "marketplace");
+                });
+
+            modelBuilder.Entity("SoulViet.Modules.Marketplace.Marketplace.Domain.Entities.PayoutBatch", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("LastModifiedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("LastModifiedBy")
+                        .HasColumnType("text");
+
+                    b.Property<decimal>("NetPayout")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<Guid>("PartnerId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("PartnerNameSnapshot")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("PeriodEnd")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("PeriodStart")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<decimal>("TotalCommission")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<decimal>("TotalSales")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<string>("TransactionReference")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("PayoutBatches", "marketplace");
                 });
 
             modelBuilder.Entity("SoulViet.Modules.Marketplace.Marketplace.Domain.Entities.Settlement", b =>
@@ -1699,6 +1766,11 @@ namespace SoulViet.API.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("SoulViet.Modules.Marketplace.Marketplace.Domain.Entities.PayoutBatch", null)
+                        .WithMany("OrderItems")
+                        .HasForeignKey("PayoutBatchId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.Navigation("Order");
                 });
 
@@ -1918,6 +1990,11 @@ namespace SoulViet.API.Migrations
                 });
 
             modelBuilder.Entity("SoulViet.Modules.Marketplace.Marketplace.Domain.Entities.Order", b =>
+                {
+                    b.Navigation("OrderItems");
+                });
+
+            modelBuilder.Entity("SoulViet.Modules.Marketplace.Marketplace.Domain.Entities.PayoutBatch", b =>
                 {
                     b.Navigation("OrderItems");
                 });

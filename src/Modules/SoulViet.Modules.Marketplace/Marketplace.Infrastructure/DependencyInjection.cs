@@ -51,6 +51,8 @@ namespace SoulViet.Modules.Marketplace.Marketplace.Infrastructure
             services.AddScoped<IOrderRepository, OrderRepository>();
             services.AddScoped<ISoulCoinTransactionRepository, SoulCoinTransactionRepository>();
             services.AddScoped<IOrderItemRepository, OrderItemRepository>();
+            services.AddScoped<IPayoutBatchRepository, PayoutBatchRepository>();
+
             services.AddScoped<ITicketOrchestrator, TicketOrchestrator>();
             services.AddScoped<ITicketService, TicketService>();
 
@@ -87,6 +89,7 @@ namespace SoulViet.Modules.Marketplace.Marketplace.Infrastructure
             });
             services.AddScoped<IVnPayService, VnPayService>();
             services.AddScoped<IPaymentTimeoutService, PaymentTimeoutService>();
+            services.AddScoped<ISettlementAutomationService, SettlementAutomationService>();
             services.AddHttpContextAccessor();
 
             services.AddValidatorsFromAssembly(assembly);

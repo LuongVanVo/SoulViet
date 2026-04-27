@@ -27,11 +27,11 @@ namespace SoulViet.Modules.Social.Social.Infrastructure.Services
             double radiusMeters = radiusKm * 1000;
 
             var attractionIds = _soulMapDbContext.TouristAttractions
-                .Where(x => EF.Functions.IsWithinDistance(x.Location, userLocation, radiusMeters, useSpheroid: true))
+                .Where(x => EF.Functions.IsWithinDistance(x.Location, userLocation, radiusMeters, true))
                 .Select(x => x.Id);
 
             var accommodationIds = _soulMapDbContext.Accommodations
-                .Where(x => EF.Functions.IsWithinDistance(x.Location, userLocation, radiusMeters, useSpheroid: true))
+                .Where(x => EF.Functions.IsWithinDistance(x.Location, userLocation, radiusMeters, true))
                 .Select(x => x.Id);
 
             return await attractionIds

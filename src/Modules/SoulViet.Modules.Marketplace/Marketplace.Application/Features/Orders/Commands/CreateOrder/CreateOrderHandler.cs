@@ -106,6 +106,15 @@ public class CreateOrderHandler(
                     product.Stock -= cartItem.Quantity;
                     await _marketplaceProductRepository.UpdateAsync(product, cancellationToken);
 
+                    decimal commissionRate = product.ProductType == ProductType.PhysicalGoods ? 5.0m : 15.0m;
+                    decimal platformFee = 2000m;
+
+                    decimal unitPrice = product.PromotionalPrice ?? product.Price;
+                    decimal totalPrice = unitPrice * cartItem.Quantity;
+
+                    decimal totalCommissionForThisItem = totalPrice * (commissionRate / 100);
+                    decimal partnerEarnings = totalPrice - totalCommissionForThisItem - platformFee;
+
                     // Create order item
                     var orderItem = new OrderItem
                     {
@@ -118,9 +127,9 @@ public class CreateOrderHandler(
                         Quantity = cartItem.Quantity,
                         UnitPrice = product.PromotionalPrice ?? product.Price,
                         ItemMetadata = cartItem.ItemMetadata,
-                        CommissionRate = 0, // Tạm set phí hoa hồng bằng 0, có thể tính toán logic % phí nền tảng ở đây sau
-                        PlatformFee = 0,
-                        PartnerEarnings = (product.PromotionalPrice ?? product.Price) * cartItem.Quantity
+                        CommissionRate = commissionRate,
+                        PlatformFee = platformFee,
+                        PartnerEarnings = partnerEarnings
                     };
 
                     vendorOrder.OrderItems.Add(orderItem);

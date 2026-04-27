@@ -137,6 +137,7 @@ namespace SoulViet.Shared.Infrastructure
             services.AddScoped<IRoleRepository, RoleRepository>();
             services.AddScoped<IUserSessionRepository, UserSessionRepository>();
             services.AddScoped<ICloudinaryService, CloudinaryService>();
+            services.AddScoped<IPartnerIntegrationService, PartnerIntegrationService>();
 
             services.AddSingleton<IBackgroundTaskQueue>(ctx => new BackgroundTaskQueue(capacity: 200));
             services.AddHostedService<QueuedHostedService>();

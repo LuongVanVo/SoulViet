@@ -26,6 +26,8 @@ namespace SoulViet.Modules.Marketplace.Marketplace.Domain.Entities
         public ProductType ProductTypeSnapshot { get; set; }
         public bool IsTicketUsed { get; set; } = false;
         public DateTime? TicketUsedDate { get; set; }
+        public bool IsSettled { get; set; } = false; // Đánh dấu đã được thanh toán cho đối tác
+        public Guid? PayoutBatchId { get; set; } // Id của batch payout nếu đã được thanh toán (thuộc đợt thanh toán nào)
         public Order Order { get; set; } = null!;
     }
 }

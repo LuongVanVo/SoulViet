@@ -29,6 +29,10 @@ namespace SoulViet.Modules.Marketplace.Marketplace.Infrastructure.Persistence.Co
             builder.Property(x => x.CommissionRate).HasColumnType("decimal(5,2)").IsRequired();
             builder.Property(x => x.PlatformFee).HasColumnType("decimal(18,2)").IsRequired();
             builder.Property(x => x.PartnerEarnings).HasColumnType("decimal(18,2)").IsRequired();
+
+            // Payout & Settlement
+            builder.Property(x => x.PayoutBatchId).IsRequired(false);
+            builder.Property(x => x.IsSettled).HasDefaultValue(false);
         }
     }
 }
