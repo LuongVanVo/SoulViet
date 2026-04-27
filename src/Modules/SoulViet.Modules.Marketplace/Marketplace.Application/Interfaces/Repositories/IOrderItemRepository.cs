@@ -14,4 +14,10 @@ public interface IOrderItemRepository
 
     // Cập nhật
     void Update(OrderItem orderItem);
+
+    // Lấy tất cả các món hàng đã Delivered nhưng chưa đối soát (chưa được đánh dấu IsSettled = true) để chuẩn bị cho việc tạo PayoutBatch
+    Task<List<OrderItem>> GetUnsettledItemsAsync(DateTime endDate, CancellationToken cancellationToken = default);
+
+    // Cập nhật danh sách các món hàng đã được đối soát (đánh dấu IsSettled = true và gán PayoutBatchId) sau khi tạo PayoutBatch
+    void UpdateRange(IEnumerable<OrderItem> orderItems);
 }

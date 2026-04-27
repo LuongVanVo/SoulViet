@@ -14,6 +14,7 @@ using SoulViet.Modules.SoulMap.SoulMap.Infrastructure;
 using SoulViet.API;
 using Microsoft.EntityFrameworkCore;
 using SoulViet.API.Middlewares;
+using SoulViet.Modules.Marketplace.Marketplace.Application.Interfaces;
 using SoulViet.Modules.SoulMap.SoulMap.Infrastructure.Persistence.Seeder;
 using SoulViet.Shared.Application;
 using Swashbuckle.AspNetCore.Annotations;
@@ -223,6 +224,18 @@ app.UseHangfireDashboard("/hangfire", new DashboardOptions
         })
     }
 });
+
+// Register recurring jobs
+using (var scope = app.Services.CreateScope())
+{
+    var recurringJobManager = scope.ServiceProvider.GetRequiredService<IRecurringJobManager>();
+
+    recurringJobManager.AddOrUpdate<ISettlementAutomationService>(
+        "auto-monthly-settlement",
+        service => service.ProcessAutoSettlementAsync(),
+        "0 0 1,15 * *"
+    );
+}
 
 var backendUrl = Environment.GetEnvironmentVariable("BACKEND_URL");
 

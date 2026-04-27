@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using SoulViet.Modules.Marketplace.Marketplace.Application.Interfaces.Repositories;
 using SoulViet.Modules.Marketplace.Marketplace.Domain.Entities;
+using SoulViet.Modules.Marketplace.Marketplace.Domain.Enums;
 
 namespace SoulViet.Modules.Marketplace.Marketplace.Infrastructure.Persistence.Repositories;
 
@@ -34,5 +35,18 @@ public class OrderItemRepository : IOrderItemRepository
     public void Update(OrderItem orderItem)
     {
         _dbContext.OrderItems.Update(orderItem);
+    }
+
+    public async Task<List<OrderItem>> GetUnsettledItemsAsync(DateTime endDate, CancellationToken cancellationToken = default)
+    {
+        return await _dbContext.OrderItems
+            .Include(x => x.Order)
+            .Where(x => x.Order.Status == OrderStatus.Delivered && x.IsSettled == false && x.CreatedAt <= endDate)
+            .ToListAsync(cancellationToken);
+    }
+
+    public void UpdateRange(IEnumerable<OrderItem> orderItems)
+    {
+        _dbContext.OrderItems.UpdateRange(orderItems);
     }
 }
