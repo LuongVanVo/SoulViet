@@ -8,6 +8,7 @@ using RabbitMQ.Client;
 // Import Dependency Injection Extensions from Modules
 using SoulViet.Shared.Infrastructure;
 using SoulViet.Modules.Social.Social.Infrastructure;
+using SoulViet.Modules.Social.Social.Infrastructure.Consumer;
 using SoulViet.Modules.Marketplace.Marketplace.Infrastructure;
 using SoulViet.Modules.SoulMap.SoulMap.Infrastructure;
 using SoulViet.API;
@@ -15,6 +16,8 @@ using Microsoft.EntityFrameworkCore;
 using SoulViet.API.Middlewares;
 using SoulViet.Modules.SoulMap.SoulMap.Infrastructure.Persistence.Seeder;
 using SoulViet.Shared.Application;
+using Swashbuckle.AspNetCore.Annotations;
+using SoulViet.Modules.Social.Presentation.Hubs;
 using SoulViet.Modules.SoulMap.SoulMap.Application.Services;
 
 // Load Environment Variable
@@ -48,8 +51,31 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy("TouristOnly", policy => policy.RequireRole("Tourist"));
 });
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", policy =>
+    {
+        policy.WithOrigins("http://localhost:5173") 
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials(); 
+    });
+});
+
+var redisConn = builder.Configuration.GetConnectionString("RedisConnection")
+                ?? Environment.GetEnvironmentVariable("REDIS_CONNECTION_STRING")
+                ?? "127.0.0.1:6381";
+builder.Services.AddSignalR()
+    .AddStackExchangeRedis(redisConn, options =>
+    {
+        options.Configuration.ChannelPrefix = StackExchange.Redis.RedisChannel.Literal("SoulViet_SignalR");
+    });
+
 // --- REGISTER DEPENDENCY INJECTION MODULES  ---
-builder.Services.AddSharedInfrastructure(builder.Configuration);
+builder.Services.AddSharedInfrastructure(builder.Configuration, x => 
+{
+    x.AddConsumer<NotificationConsumer>();
+});
 builder.Services.AddSocialModule(builder.Configuration);
 builder.Services.AddMarketplaceModule(builder.Configuration);
 builder.Services.AddSoulMapModule(builder.Configuration);
@@ -73,6 +99,8 @@ var app = builder.Build();
 
 // Middleware
 app.UseMiddleware<GlobalExceptionMiddleware>();
+
+app.UseCors("AllowAll");
 
 if (app.Environment.IsDevelopment())
 {
@@ -168,9 +196,11 @@ if (args.Contains("--seed-media"))
     }
 }
 
-app.MapControllers();
 app.UseAuthentication();
 app.UseAuthorization();
+app.MapHub<NotificationHub>("/hubs/notifications"); 
+
+app.MapControllers();
 
 // Dashboard hangfire
 app.UseHangfireDashboard("/hangfire", new DashboardOptions

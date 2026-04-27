@@ -1,9 +1,10 @@
-﻿using AutoMapper;
+using AutoMapper;
 using MediatR;
 using SoulViet.Modules.Social.Social.Application.DTOs;
 using SoulViet.Modules.Social.Social.Application.Exceptions;
 using SoulViet.Modules.Social.Social.Application.Features.PostComments.Results;
 using SoulViet.Modules.Social.Social.Application.Interfaces;
+using SoulViet.Modules.Social.Social.Application.Interfaces.Services;
 using SoulViet.Modules.Social.Social.Application.Interfaces.Repositories;
 using SoulViet.Modules.Social.Social.Domain.Entities;
 using System;
@@ -20,19 +21,22 @@ namespace SoulViet.Modules.Social.Social.Application.Features.PostComments.Comma
         private readonly IUserService _userService;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
+        private readonly ICommentEventService _commentEventService;
 
         public CreatePostCommentCommandHandler(
             IPostRepository postRepository,
             IPostCommentRepository commentRepository,
             IUserService userService,
             IUnitOfWork unitOfWork,
-            IMapper mapper)
+            IMapper mapper,
+            ICommentEventService commentEventService)
         {
             _postRepository = postRepository;
             _commentRepository = commentRepository;
             _userService = userService;
             _unitOfWork = unitOfWork;
             _mapper = mapper;
+            _commentEventService = commentEventService;
         }
         public async Task<PostCommentResponse> Handle(CreatePostCommentCommand request, CancellationToken cancellationToken)
         {
@@ -82,6 +86,8 @@ namespace SoulViet.Modules.Social.Social.Application.Features.PostComments.Comma
             {
                 response.FullName = "Anonymous user";
             }
+
+            await _commentEventService.PublishCommentAsync(request.PostId, response, cancellationToken);
 
             return response;
         }

@@ -2,9 +2,11 @@ using AutoMapper;
 using MediatR;
 using SoulViet.Modules.Social.Social.Application.Features.Posts.Results;
 using SoulViet.Modules.Social.Social.Application.Interfaces;
+using SoulViet.Modules.Social.Social.Application.Interfaces.Services;
 using SoulViet.Modules.Social.Social.Application.Interfaces.Repositories;
 using SoulViet.Modules.Social.Social.Domain.Entities;
 using SoulViet.Shared.Domain.Enums;
+using SoulViet.Modules.Social.Social.Domain.Enums;
 
 namespace SoulViet.Modules.Social.Social.Application.Features.Posts.Commands.CreatePost;
 
@@ -27,9 +29,20 @@ public class CreatePostCommandHandler : IRequestHandler<CreatePostCommand, PostR
         {
             UserId = request.UserId,
             Content = request.Content,
-            MediaUrls = request.MediaUrls ?? new List<string>(),
+            Media = request.Media.Select(m => new PostMedia
+            {
+                Url = m.Url,
+                MediaType = m.MediaType,
+                ObjectKey = m.ObjectKey,
+                Width = m.Width,
+                Height = m.Height,
+                FileSizeBytes = m.FileSizeBytes,
+                SortOrder = m.SortOrder
+            }).ToList(),
+            TaggedProductIds = request.TaggedProductIds ?? new List<Guid>(),
             VibeTag = request.VibeTag,
             CheckinLocationId = request.CheckinLocationId,
+            AspectRatio = request.AspectRatio,
             LikesCount = 0,
             CommentsCount = 0,
             SharesCount = 0,
@@ -45,4 +58,3 @@ public class CreatePostCommandHandler : IRequestHandler<CreatePostCommand, PostR
         return response;
     }
 }
-

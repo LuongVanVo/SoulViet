@@ -6,6 +6,7 @@ using SoulViet.Modules.Social.Social.Application.Features.Posts.Commands.CreateP
 using SoulViet.Modules.Social.Social.Application.Features.Posts.Commands.DeletePost;
 using SoulViet.Modules.Social.Social.Application.Features.Posts.Commands.UpdatePost;
 using SoulViet.Modules.Social.Social.Application.Features.Posts.Queries.GetPostById;
+using SoulViet.Modules.Social.Social.Application.Features.Posts.Queries.GetPostByUserId;
 using SoulViet.Modules.Social.Social.Presentation.Helpers;
 using Swashbuckle.AspNetCore.Annotations;
 
@@ -116,6 +117,33 @@ public class PostController : ControllerBase
 
         if (result == null)
             return NotFound(new { message = "Post not found" });
+        return Ok(result);
+    }
+
+    [HttpGet("user/{userId:guid}")]
+    [AllowAnonymous]
+    [SwaggerOperation(
+        Summary = "Get posts by user id (Paginated)",
+        Description = "Retrieves a keyset paginated list of posts for a specific user."
+    )]
+    public async Task<IActionResult> GetByUserId(
+        [FromRoute] Guid userId,
+        [FromQuery] string? after,
+        [FromQuery] int first = 20,
+        [FromQuery] string sortBy = "newest",
+        CancellationToken cancellationToken = default)
+    {
+        var query = new GetPostByUserIdQuery
+        {
+            UserId = userId,
+            After = after,
+            First = first,
+            SortBy = string.IsNullOrWhiteSpace(sortBy) ? "newest" : sortBy.ToLowerInvariant()
+        };
+        var result = await _mediator.Send(query, cancellationToken);
+
+        if (result == null)
+            return NotFound(new { message = "User posts not found" });
         return Ok(result);
     }
 }
