@@ -92,6 +92,8 @@ namespace SoulViet.Modules.Marketplace.Marketplace.Infrastructure
             services.AddScoped<ISettlementAutomationService, SettlementAutomationService>();
             services.AddHttpContextAccessor();
 
+            services.AddScoped<ISplitRoomRepository, SplitRoomRepository>();
+
             services.AddValidatorsFromAssembly(assembly);
 
             services.AddMediatR(cfg =>

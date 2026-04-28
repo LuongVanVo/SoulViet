@@ -24,4 +24,14 @@ public static class UserHelper
 
         return emailClaim;
     }
+
+    public static string GetFullName(this ClaimsPrincipal user)
+    {
+        var fullNameClaim = user.FindFirstValue("full_name") ?? user.FindFirstValue("name");
+
+        if (string.IsNullOrEmpty(fullNameClaim))
+            throw new UnauthorizedAccessException("User full name not found in token.");
+
+        return fullNameClaim;
+    }
 }
