@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using SoulViet.Modules.Marketplace.Marketplace.Application.Common.Events;
+using SoulViet.Modules.Marketplace.Marketplace.Application.Features.BillSplitting.Commands.ProcessSplitPaymentIpn;
 using SoulViet.Modules.Marketplace.Marketplace.Application.Features.Orders.Results;
 using SoulViet.Modules.Marketplace.Marketplace.Application.Interfaces;
 using SoulViet.Modules.Marketplace.Marketplace.Application.Interfaces.Repositories;
@@ -20,13 +21,15 @@ public class ProcessVnPayIpnHandler : IRequestHandler<ProcessVnPayIpnCommand, Vn
     private readonly VnPayConfig _vnPayConfig;
     private readonly ILogger<ProcessVnPayIpnHandler> _logger;
     private readonly IPublishEndpoint _publishEndpoint;
-    public ProcessVnPayIpnHandler(IMasterOrderRepository masterOrderRepository, IUnitOfWork unitOfWork, IOptions<VnPayConfig> vnPayConfig, ILogger<ProcessVnPayIpnHandler> logger, IPublishEndpoint publishEndpoint)
+    private readonly IMediator _mediator;
+    public ProcessVnPayIpnHandler(IMasterOrderRepository masterOrderRepository, IUnitOfWork unitOfWork, IOptions<VnPayConfig> vnPayConfig, ILogger<ProcessVnPayIpnHandler> logger, IPublishEndpoint publishEndpoint, IMediator mediator)
     {
         _masterOrderRepository = masterOrderRepository;
         _unitOfWork = unitOfWork;
         _vnPayConfig = vnPayConfig.Value;
         _logger = logger;
         _publishEndpoint = publishEndpoint;
+        _mediator = mediator;
     }
 
     public async Task<VnPayIpnResponse> Handle(ProcessVnPayIpnCommand request, CancellationToken cancellationToken)
@@ -58,6 +61,26 @@ public class ProcessVnPayIpnHandler : IRequestHandler<ProcessVnPayIpnCommand, Vn
 
         try
         {
+            // Handler for case bill split
+            if (vnp_orderId.StartsWith("SPLIT-"))
+            {
+                _logger.LogInformation("VNPay IPN: Begin processing split bill IPN for OrderId {OrderId}", vnp_orderId);
+
+                var splitCommand = new ProcessSplitPaymentIpnCommand
+                {
+                    TxnRef = vnp_orderId,
+                    ResponseCode = vnp_ResponseCode,
+                };
+
+                await _mediator.Send(splitCommand, cancellationToken);
+
+                return new VnPayIpnResponse
+                {
+                    RspCode = "00",
+                    Message = "Confirm Success"
+                };
+            }
+
             var realOrderId = Guid.Parse(vnp_orderId.Split('_')[0]);
             var masterOrder = await _masterOrderRepository.GetByIdWithDetailsAsync(realOrderId, cancellationToken);
 

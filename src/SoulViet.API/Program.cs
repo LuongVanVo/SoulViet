@@ -15,6 +15,7 @@ using SoulViet.API;
 using Microsoft.EntityFrameworkCore;
 using SoulViet.API.Middlewares;
 using SoulViet.Modules.Marketplace.Marketplace.Application.Interfaces;
+using SoulViet.Modules.Marketplace.Marketplace.Presentation.Hubs;
 using SoulViet.Modules.SoulMap.SoulMap.Infrastructure.Persistence.Seeder;
 using SoulViet.Shared.Application;
 using Swashbuckle.AspNetCore.Annotations;
@@ -56,7 +57,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
     {
-        policy.WithOrigins("http://localhost:5173") 
+        policy.WithOrigins("http://localhost:5173", "http://127.0.0.1:5500", "http://localhost:5500")
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials(); 
@@ -236,6 +237,9 @@ using (var scope = app.Services.CreateScope())
         "0 0 1,15 * *"
     );
 }
+
+// Map hub
+app.MapHub<BillSplitHub>("/hubs/bill-split");
 
 var backendUrl = Environment.GetEnvironmentVariable("BACKEND_URL");
 

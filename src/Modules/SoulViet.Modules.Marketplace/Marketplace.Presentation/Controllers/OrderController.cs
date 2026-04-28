@@ -91,6 +91,14 @@ public class OrderController : ControllerBase
         var vnp_OrderInfo = Request.Query["vnp_OrderInfo"].ToString();
         var vnp_TransactionStatus = Request.Query["vnp_TransactionStatus"].ToString();
 
+        if (vnp_TxnRef.StartsWith("SPLIT-"))
+        {
+            var parts = vnp_TxnRef.Split('-');
+            var roomId = parts[1];
+
+            return Redirect($"http://localhost:3000/split-payment/room/{roomId}?responseCode={vnp_ResponseCode}&transactionNo={vnp_TransactionNo}&orderInfo={Uri.EscapeDataString(vnp_OrderInfo)}&transactionStatus={vnp_TransactionStatus}");
+        }
+
         var orderId = vnp_TxnRef.Split('_')[0];
 
         var amount = Convert.ToDecimal(vnp_Amount) / 100;

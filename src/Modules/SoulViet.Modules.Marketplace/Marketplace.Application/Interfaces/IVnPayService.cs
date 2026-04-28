@@ -6,4 +6,5 @@ namespace SoulViet.Modules.Marketplace.Marketplace.Application.Interfaces;
 public interface IVnPayService
 {
     string CreatePaymentUrl(MasterOrder masterOrder, HttpContext context);
+    string CreatePaymentUrl(decimal amount, string txnRef, string orderInfo, HttpContext context);
 }

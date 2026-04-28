@@ -264,6 +264,9 @@ namespace SoulViet.API.Migrations
                     b.Property<decimal>("SoulCoinUsed")
                         .HasColumnType("numeric");
 
+                    b.Property<string>("SplitNote")
+                        .HasColumnType("text");
+
                     b.Property<decimal>("TotalItemsPrice")
                         .HasColumnType("decimal(18,2)");
 

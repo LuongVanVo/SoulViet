@@ -29,6 +29,7 @@ public class TokenService : ITokenService
         {
             new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
             new Claim(JwtRegisteredClaimNames.Email, user.Email ?? ""),
+            new Claim("full_name", $"{user.FullName}".Trim()),
             new Claim(JwtRegisteredClaimNames.Jti, jwtId)
         };
 
