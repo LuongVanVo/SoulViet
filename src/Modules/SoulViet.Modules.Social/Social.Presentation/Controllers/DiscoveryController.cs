@@ -2,6 +2,9 @@ using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using SoulViet.Modules.Social.Social.Application.Features.Discovery.Queries.GetDiscoveryFeed;
 using SoulViet.Shared.Domain.Enums;
+using SoulViet.Modules.Social.Social.Presentation.Helpers;
+using System;
+using System.Security.Claims;
 using System.Threading.Tasks;
 
 namespace SoulViet.Modules.Social.Social.Presentation.Controllers
@@ -27,6 +30,12 @@ namespace SoulViet.Modules.Social.Social.Presentation.Controllers
             [FromQuery] string? after = null,
             [FromQuery] int first = 10)
         {
+            Guid? currentUserId = null;
+            if (User.Identity?.IsAuthenticated == true)
+            {
+                currentUserId = User.GetCurrentUserId();
+            }
+
             var query = new GetDiscoveryFeedQuery
             {
                 Latitude = latitude,
@@ -35,7 +44,8 @@ namespace SoulViet.Modules.Social.Social.Presentation.Controllers
                 VibeTag = vibeTag,
                 SortBy = sortBy,
                 After = after,
-                First = first
+                First = first,
+                CurrentUserId = currentUserId
             };
 
             var result = await _mediator.Send(query);

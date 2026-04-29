@@ -8,6 +8,7 @@ namespace SoulViet.Modules.Social.Social.Application.Features.Posts.Queries.GetP
     public class GetPostByUserIdQuery : IRequest<Connection<PostResponse>?>
     {
         public Guid UserId { get; set; }
+        public Guid? CurrentUserId { get; set; }
         public string? After { get; set; }
         public int First { get; set; } = 20;
         public string SortBy { get; set; } = "newest";

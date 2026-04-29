@@ -12,6 +12,7 @@ namespace SoulViet.Modules.Social.Social.Domain.Entities
         public VibeTag VibeTag { get; set; }
 
         public Guid? CheckinLocationId { get; set; } // Link to SoulMap
+        public string? CheckinLocationName { get; set; }
         public Guid? OriginalPostId { get; set; } // Link to source post when shared to Timeline
 
         public int LikesCount { get; set; } = 0;

@@ -36,34 +36,39 @@ namespace SoulViet.Modules.Social.Social.Application.Features.PostLikes.Commands
 
         public async Task<PostLikeResult> Handle(UnlikePostCommand request, CancellationToken cancellationToken)
         {
-            var post = await _postRepository.GetByIdAsync(request.PostId, cancellationToken);
-            if (post == null)
-                throw new NotFoundException("Post not found");
-
             var existingLike = await _postLikeRepository.GetPostLikeAsync(request.PostId, request.UserId, cancellationToken);
             if (existingLike == null)
             {
-                var cached = await _cacheService.GetAsync<long?>(LikesKey(request.PostId), cancellationToken);
-                return new PostLikeResult(false, (int)(cached ?? post.LikesCount), request.PostId);
+                var cachedCount = await _cacheService.GetAsync<long?>(LikesKey(request.PostId), cancellationToken);
+                if (!cachedCount.HasValue)
+                {
+                    var post = await _postRepository.GetByIdAsync(request.PostId, cancellationToken);
+                    cachedCount = post?.LikesCount ?? 0;
+                }
+                return new PostLikeResult(false, (int)cachedCount.Value, request.PostId);
             }
 
-            _postLikeRepository.Remove(existingLike);
+            try 
+            {
+                _postLikeRepository.Remove(existingLike);
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            var redisKey = LikesKey(request.PostId);
-            var existsInRedis = await _cacheService.GetAsync<long?>(redisKey, cancellationToken);
-            if (existsInRedis == null)
-                await _cacheService.SetAsync(redisKey, (long)post.LikesCount, cancellationToken: cancellationToken);
+                await _postRepository.DecrementLikesCountAsync(request.PostId, cancellationToken);
 
-            var newCount = await _cacheService.DecrementAsync(redisKey, cancellationToken);
+                var redisKey = LikesKey(request.PostId);
+                var newCount = await _cacheService.DecrementAsync(redisKey, cancellationToken);
 
-            post.LikesCount = (int)newCount;
-            _postRepository.Update(post);
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
+                var result = new PostLikeResult(false, (int)newCount, request.PostId);
+                
+                _ = _likeEventService.PublishLikeChangedAsync(request.PostId, result, cancellationToken);
 
-            var result = new PostLikeResult(false, (int)newCount, request.PostId);
-            await _likeEventService.PublishLikeChangedAsync(request.PostId, result, cancellationToken);
-
-            return result;
+                return result;
+            }
+            catch (Exception ex)
+            {
+                var post = await _postRepository.GetByIdAsync(request.PostId, cancellationToken);
+                return new PostLikeResult(false, post?.LikesCount ?? 0, request.PostId);
+            }
         }
     }
 }

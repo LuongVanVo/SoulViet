@@ -14,12 +14,14 @@ namespace SoulViet.Modules.Social.Social.Application.Features.Posts.Commands.Upd
 public class UpdatePostCommandHandler : IRequestHandler<UpdatePostCommand, PostResponse>
 {
     private readonly IPostRepository _postRepository;
+    private readonly IUserService _userService;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMapper _mapper;
 
-    public UpdatePostCommandHandler(IPostRepository postRepository, IUnitOfWork unitOfWork, IMapper mapper)
+    public UpdatePostCommandHandler(IPostRepository postRepository, IUserService userService, IUnitOfWork unitOfWork, IMapper mapper)
     {
         _postRepository = postRepository;
+        _userService = userService;
         _unitOfWork = unitOfWork;
         _mapper = mapper;
     }
@@ -41,6 +43,7 @@ public class UpdatePostCommandHandler : IRequestHandler<UpdatePostCommand, PostR
         post.Content = request.Content;
         post.VibeTag = request.VibeTag;
         post.CheckinLocationId = request.CheckinLocationId;
+        post.CheckinLocationName = request.CheckinLocationName;
         post.AspectRatio = request.AspectRatio;
         post.TaggedProductIds = request.TaggedProductIds ?? new List<Guid>();
         
@@ -100,6 +103,15 @@ public class UpdatePostCommandHandler : IRequestHandler<UpdatePostCommand, PostR
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         var response = _mapper.Map<PostResponse>(post);
+
+        // Lấy thông tin user
+        var userInfos = await _userService.GetUsersMinimalInfoAsync(new[] { post.UserId }, cancellationToken);
+        if (userInfos.TryGetValue(post.UserId, out var userInfo))
+        {
+            response.AuthorName = userInfo.FullName;
+            response.AvatarUrl = userInfo.AvatarUrl;
+        }
+
         response.Success = true;
         response.Message = "Post updated successfully.";
         return response;

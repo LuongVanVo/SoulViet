@@ -7,11 +7,14 @@ public class PostDto
 {
     public Guid Id { get; set; }
     public Guid UserId { get; set; }
+    public string? AuthorName { get; set; }
+    public string? AvatarUrl { get; set; }
     public string? Content { get; set; }
     public List<MediaItemDto> Media { get; set; } = new();
     public List<Guid> TaggedProductIds { get; set; } = new();
     public VibeTag VibeTag { get; set; }
     public Guid? CheckinLocationId { get; set; }
+    public string? CheckinLocationName { get; set; }
     public int LikesCount { get; set; }
     public int CommentsCount { get; set; }
     public int SharesCount { get; set; }

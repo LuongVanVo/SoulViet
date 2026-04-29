@@ -13,6 +13,7 @@ public class CreatePostCommand : IRequest<PostResponse>
     public List<Guid> TaggedProductIds { get; set; } = new();
     public VibeTag VibeTag { get; set; }
     public Guid? CheckinLocationId { get; set; }
+    public string? CheckinLocationName { get; set; }
     public string? AspectRatio { get; set; }
 }
 

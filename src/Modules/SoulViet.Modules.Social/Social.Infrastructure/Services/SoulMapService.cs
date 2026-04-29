@@ -38,5 +38,24 @@ namespace SoulViet.Modules.Social.Social.Infrastructure.Services
                 .Union(accommodationIds)
                 .ToListAsync(cancellationToken);
         }
+
+        public async Task<Dictionary<Guid, string>> GetLocationNamesAsync(IEnumerable<Guid> locationIds, CancellationToken cancellationToken = default)
+        {
+            var distinctIds = locationIds.Where(id => id != Guid.Empty).Distinct().ToList();
+            if (!distinctIds.Any()) return new Dictionary<Guid, string>();
+
+            var attractions = await _soulMapDbContext.TouristAttractions
+                .Where(x => distinctIds.Contains(x.Id))
+                .Select(x => new { x.Id, x.Name })
+                .ToListAsync(cancellationToken);
+
+            var accommodations = await _soulMapDbContext.Accommodations
+                .Where(x => distinctIds.Contains(x.Id))
+                .Select(x => new { x.Id, x.Name })
+                .ToListAsync(cancellationToken);
+
+            return attractions.Union(accommodations)
+                .ToDictionary(x => x.Id, x => x.Name);
+        }
     }
 }

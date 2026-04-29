@@ -80,6 +80,7 @@ public class PostRepository : IPostRepository
         return (items, totalCount);
     }
     public async Task<(List<Post> Items, int TotalCount)> GetDiscoveryPagedAsync(
+        Guid? currentUserId,
         List<Guid>? nearbyLocationIds,
         VibeTag? vibeTag,
         string sortBy,
@@ -113,7 +114,8 @@ public class PostRepository : IPostRepository
             var rankedQuery = query.Select(p => new
             {
                 Post = p,
-                Score = (p.LikesCount + p.CommentsCount * 2.0 + p.SharesCount * 3.0) / 
+                Score = (p.LikesCount + p.CommentsCount * 2.0 + p.SharesCount * 3.0 + 10.0 + 
+                         (currentUserId.HasValue && p.UserId == currentUserId.Value && (now - p.CreatedAt).TotalMinutes < 1 ? 1000000.0 : 0.0)) / 
                         Math.Pow((now - p.CreatedAt).TotalHours + 2, 1.8)
             });
 
@@ -181,6 +183,20 @@ public class PostRepository : IPostRepository
     public void RemoveMedia(IEnumerable<PostMedia> media)
     {
         _dbContext.PostMedia.RemoveRange(media);
+    }
+
+    public async Task IncrementLikesCountAsync(Guid postId, CancellationToken cancellationToken)
+    {
+        await _dbContext.Posts
+            .Where(p => p.Id == postId)
+            .ExecuteUpdateAsync(s => s.SetProperty(p => p.LikesCount, p => p.LikesCount + 1), cancellationToken);
+    }
+
+    public async Task DecrementLikesCountAsync(Guid postId, CancellationToken cancellationToken)
+    {
+        await _dbContext.Posts
+            .Where(p => p.Id == postId)
+            .ExecuteUpdateAsync(s => s.SetProperty(p => p.LikesCount, p => p.LikesCount - 1), cancellationToken);
     }
 }
 

@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using SoulViet.Shared.Application.Interfaces.Repositories;
 using SoulViet.Shared.Domain.Entities;
 
@@ -55,5 +55,12 @@ public class UserRepository(SharedDbContext dbContext) : IUserRepository
     {
         _dbContext.Users.Update(user);
         await _dbContext.SaveChangesAsync();
+    }
+
+    public async Task<List<User>> GetUsersByIdsAsync(IEnumerable<Guid> userIds)
+    {
+        return await _dbContext.Users
+            .Where(x => userIds.Contains(x.Id))
+            .ToListAsync();
     }
 }
