@@ -198,5 +198,12 @@ public class PostRepository : IPostRepository
             .Where(p => p.Id == postId)
             .ExecuteUpdateAsync(s => s.SetProperty(p => p.LikesCount, p => p.LikesCount - 1), cancellationToken);
     }
+
+    public async Task UpdateCommentsCountAsync(Guid postId, int delta, CancellationToken cancellationToken)
+    {
+        await _dbContext.Posts
+            .Where(p => p.Id == postId)
+            .ExecuteUpdateAsync(s => s.SetProperty(p => p.CommentsCount, p => p.CommentsCount + delta), cancellationToken);
+    }
 }
 

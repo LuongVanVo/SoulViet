@@ -3,8 +3,10 @@ using Microsoft.EntityFrameworkCore;
 using SoulViet.Modules.Social.Social.Application.Common.Pagination;
 using SoulViet.Modules.Social.Social.Application.Features.PostComments.Results;
 using SoulViet.Modules.Social.Social.Application.Interfaces.Repositories;
+using SoulViet.Modules.Social.Social.Application.Interfaces.Services;
 using SoulViet.Modules.Social.Social.Infrastructure.Persistence;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -15,13 +17,16 @@ public class GetCommentRepliesQueryHandler : IRequestHandler<GetCommentRepliesQu
 {
     private readonly IPostCommentRepository _postCommentRepository;
     private readonly SocialDbContext _dbContext;
+    private readonly IUserService _userService;
 
     public GetCommentRepliesQueryHandler(
         IPostCommentRepository postCommentRepository,
-        SocialDbContext dbContext)
+        SocialDbContext dbContext,
+        IUserService userService)
     {
         _postCommentRepository = postCommentRepository;
         _dbContext = dbContext;
+        _userService = userService;
     }
 
     public async Task<Connection<PostCommentResponse>?> Handle(GetCommentRepliesQuery request, CancellationToken cancellationToken)
@@ -56,19 +61,35 @@ public class GetCommentRepliesQueryHandler : IRequestHandler<GetCommentRepliesQu
         var hasNextPage = items.Count > request.First;
         var repliesToReturn = items.Take(request.First).ToList();
 
-        var edges = repliesToReturn.Select(c => new Edge<PostCommentResponse>
-        {
-            Cursor = CursorHelper.Encode(c.Id, c.CreatedAt, request.SortBy),
-            Node = new PostCommentResponse
+        var userIds = repliesToReturn.Select(c => c.UserId).Distinct().ToList();
+        var userInfos = await _userService.GetUsersMinimalInfoAsync(userIds, cancellationToken);
+
+        var replyIds = repliesToReturn.Select(c => c.Id).ToList();
+        var nestedReplyCounts = await _dbContext.PostComments
+            .Where(c => c.ParentCommentId != null && replyIds.Contains(c.ParentCommentId.Value) && !c.IsDeleted)
+            .GroupBy(c => c.ParentCommentId)
+            .Select(g => new { ParentId = g.Key!.Value, Count = g.Count() })
+            .ToDictionaryAsync(x => x.ParentId, x => x.Count, cancellationToken);
+
+        var edges = repliesToReturn.Select(c => {
+            var userInfo = userInfos.GetValueOrDefault(c.UserId);
+            return new Edge<PostCommentResponse>
             {
-                Id = c.Id,
-                PostId = c.PostId,
-                UserId = c.UserId,
-                Content = c.Content,
-                CreatedAt = c.CreatedAt,
-                ParentCommentId = c.ParentCommentId,
-                Success = true
-            }
+                Cursor = CursorHelper.Encode(c.Id, c.CreatedAt, request.SortBy),
+                Node = new PostCommentResponse
+                {
+                    Id = c.Id,
+                    PostId = c.PostId,
+                    UserId = c.UserId,
+                    FullName = userInfo?.FullName ?? "User",
+                    AvatarUrl = userInfo?.AvatarUrl,
+                    Content = c.Content,
+                    CreatedAt = c.CreatedAt,
+                    ParentCommentId = c.ParentCommentId,
+                    RepliesCount = nestedReplyCounts.GetValueOrDefault(c.Id, 0),
+                    Success = true
+                }
+            };
         }).ToList();
 
         var pageInfo = new PageInfo

@@ -46,9 +46,6 @@ namespace SoulViet.Modules.Social.Social.Infrastructure
             services.AddSingleton<PostCommentEventService>();
             services.AddSingleton<ICommentEventService>(sp => sp.GetRequiredService<PostCommentEventService>());
 
-            services.AddSingleton<PostLikeEventService>();
-            services.AddSingleton<ILikeEventService>(sp => sp.GetRequiredService<PostLikeEventService>());
-
             services.AddSingleton<PostShareEventService>();
             services.AddSingleton<IShareEventService>(sp => sp.GetRequiredService<PostShareEventService>());
 

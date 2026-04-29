@@ -40,8 +40,8 @@ namespace SoulViet.Modules.Social.Social.Application.Features.PostComments.Comma
         }
         public async Task<PostCommentResponse> Handle(CreatePostCommentCommand request, CancellationToken cancellationToken)
         {
-            var post = await _postRepository.GetByIdAsync(request.PostId, cancellationToken);
-            if (post == null)
+            var postExists = await _postRepository.GetByIdAsync(request.PostId, cancellationToken);
+            if (postExists == null)
             {
                 throw new NotFoundException($"Post with ID {request.PostId} not found.");
             }
@@ -67,16 +67,19 @@ namespace SoulViet.Modules.Social.Social.Application.Features.PostComments.Comma
             };
 
             await _commentRepository.AddAsync(commentEntity, cancellationToken);
-
-            post.CommentsCount += 1;
-            _postRepository.Update(post);
-
             await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+            // Update count atomically
+            await _postRepository.UpdateCommentsCountAsync(request.PostId, 1, cancellationToken);
+            
+            // Reload post to get the latest count for the event
+            var post = await _postRepository.GetByIdAsync(request.PostId, cancellationToken);
 
             var userIds = new List<Guid> { request.UserId };
             var usersInfo = await _userService.GetUsersMinimalInfoAsync(userIds, cancellationToken);
 
             var response = _mapper.Map<PostCommentResponse>(commentEntity);
+            response.Success = true;
             if (usersInfo.TryGetValue(commentEntity.UserId, out var user))
             {
                 response.FullName = user.FullName;
@@ -87,7 +90,8 @@ namespace SoulViet.Modules.Social.Social.Application.Features.PostComments.Comma
                 response.FullName = "Anonymous user";
             }
 
-            await _commentEventService.PublishCommentAsync(request.PostId, response, cancellationToken);
+            var eventPayload = CommentStreamEvent.Created(response, post?.CommentsCount ?? 0);
+            await _commentEventService.PublishCommentAsync(request.PostId, eventPayload, cancellationToken);
 
             return response;
         }

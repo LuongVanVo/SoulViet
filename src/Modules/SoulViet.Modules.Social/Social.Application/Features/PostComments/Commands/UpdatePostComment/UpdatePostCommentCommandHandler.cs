@@ -9,20 +9,34 @@ using SoulViet.Modules.Social.Social.Application.Interfaces.Repositories;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace SoulViet.Modules.Social.Social.Application.Features.PostComments.Commands.UpdatePostComment
 {
     public class UpdatePostCommentCommandHandler : IRequestHandler<UpdatePostCommentCommand, PostCommentResponse>
     {
         private readonly IPostCommentRepository _commentRepository;
+        private readonly IPostRepository _postRepository;
+        private readonly IUserService _userService;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
+        private readonly ICommentEventService _commentEventService;
 
-        public UpdatePostCommentCommandHandler(IPostCommentRepository commentRepository, IUnitOfWork unitOfWork, IMapper mapper)
+        public UpdatePostCommentCommandHandler(
+            IPostCommentRepository commentRepository, 
+            IPostRepository postRepository,
+            IUserService userService,
+            IUnitOfWork unitOfWork, 
+            IMapper mapper,
+            ICommentEventService commentEventService)
         {
             _commentRepository = commentRepository;
+            _postRepository = postRepository;
+            _userService = userService;
             _unitOfWork = unitOfWork;
             _mapper = mapper;
+            _commentEventService = commentEventService;
         }
         public async Task<PostCommentResponse> Handle(UpdatePostCommentCommand request, CancellationToken cancellationToken)
         {
@@ -38,9 +52,24 @@ namespace SoulViet.Modules.Social.Social.Application.Features.PostComments.Comma
             comment.Content = request.Content;
             _commentRepository.Update(comment);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+            var post = await _postRepository.GetByIdAsync(comment.PostId, cancellationToken);
+            var usersInfo = await _userService.GetUsersMinimalInfoAsync(new List<Guid> { comment.UserId }, cancellationToken);
+
             var response = _mapper.Map<PostCommentResponse>(comment);
+            if (usersInfo.TryGetValue(comment.UserId, out var user))
+            {
+                response.FullName = user.FullName;
+                response.AvatarUrl = user.AvatarUrl;
+            }
+
             response.Success = true;
             response.Message = "Comment updated successfully.";
+
+            // Publish event
+            var eventPayload = CommentStreamEvent.Updated(response, post?.CommentsCount ?? 0);
+            await _commentEventService.PublishCommentAsync(comment.PostId, eventPayload, cancellationToken);
+
             return response;
         }
     }

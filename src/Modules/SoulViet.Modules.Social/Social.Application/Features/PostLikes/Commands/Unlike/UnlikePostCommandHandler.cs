@@ -16,7 +16,6 @@ namespace SoulViet.Modules.Social.Social.Application.Features.PostLikes.Commands
         private readonly IPostLikeRepository _postLikeRepository;
         private readonly IUnitOfWork _unitOfWork;
         private readonly ICacheService _cacheService;
-        private readonly ILikeEventService _likeEventService;
 
         private static string LikesKey(Guid postId) => $"post:likes:{postId}";
 
@@ -24,14 +23,12 @@ namespace SoulViet.Modules.Social.Social.Application.Features.PostLikes.Commands
             IPostRepository postRepository,
             IPostLikeRepository postLikeRepository,
             IUnitOfWork unitOfWork,
-            ICacheService cacheService,
-            ILikeEventService likeEventService)
+            ICacheService cacheService)
         {
             _postRepository = postRepository;
             _postLikeRepository = postLikeRepository;
             _unitOfWork = unitOfWork;
             _cacheService = cacheService;
-            _likeEventService = likeEventService;
         }
 
         public async Task<PostLikeResult> Handle(UnlikePostCommand request, CancellationToken cancellationToken)
@@ -45,7 +42,7 @@ namespace SoulViet.Modules.Social.Social.Application.Features.PostLikes.Commands
                     var post = await _postRepository.GetByIdAsync(request.PostId, cancellationToken);
                     cachedCount = post?.LikesCount ?? 0;
                 }
-                return new PostLikeResult(false, (int)cachedCount.Value, request.PostId);
+                return new PostLikeResult(false, (int)cachedCount.Value, request.PostId, request.UserId);
             }
 
             try 
@@ -58,16 +55,14 @@ namespace SoulViet.Modules.Social.Social.Application.Features.PostLikes.Commands
                 var redisKey = LikesKey(request.PostId);
                 var newCount = await _cacheService.DecrementAsync(redisKey, cancellationToken);
 
-                var result = new PostLikeResult(false, (int)newCount, request.PostId);
+                var result = new PostLikeResult(false, (int)newCount, request.PostId, request.UserId);
                 
-                _ = _likeEventService.PublishLikeChangedAsync(request.PostId, result, cancellationToken);
-
                 return result;
             }
             catch (Exception ex)
             {
                 var post = await _postRepository.GetByIdAsync(request.PostId, cancellationToken);
-                return new PostLikeResult(false, post?.LikesCount ?? 0, request.PostId);
+                return new PostLikeResult(false, post?.LikesCount ?? 0, request.PostId, request.UserId);
             }
         }
     }

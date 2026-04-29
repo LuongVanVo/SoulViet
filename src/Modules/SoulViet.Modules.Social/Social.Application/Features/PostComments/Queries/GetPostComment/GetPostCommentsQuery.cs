@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using SoulViet.Modules.Social.Social.Application.Common.Pagination;
 using SoulViet.Modules.Social.Social.Application.Features.PostComments.Results;
 using System;
@@ -11,4 +11,5 @@ public class GetPostCommentsQuery : IRequest<Connection<PostCommentResponse>?>
     public string? After { get; set; }
     public int First { get; set; } = 20;
     public string SortBy { get; set; } = "newest"; 
+    public bool IncludeReplies { get; set; } = false;
 }
