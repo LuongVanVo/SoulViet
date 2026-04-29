@@ -32,4 +32,5 @@ public interface IPostRepository
     void RemoveMedia(IEnumerable<PostMedia> media);
     Task IncrementLikesCountAsync(Guid postId, CancellationToken cancellationToken);
     Task DecrementLikesCountAsync(Guid postId, CancellationToken cancellationToken);
+    Task UpdateCommentsCountAsync(Guid postId, int delta, CancellationToken cancellationToken);
 }

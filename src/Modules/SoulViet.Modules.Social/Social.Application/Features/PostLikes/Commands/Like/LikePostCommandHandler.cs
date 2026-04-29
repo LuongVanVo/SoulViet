@@ -18,7 +18,7 @@ namespace SoulViet.Modules.Social.Social.Application.Features.PostLikes.Commands
         private readonly IPostLikeRepository _postLikeRepository;
         private readonly IUnitOfWork _unitOfWork;
         private readonly ICacheService _cacheService;
-        private readonly ILikeEventService _likeEventService;
+        private readonly MassTransit.IPublishEndpoint _publishEndpoint;
 
         private static string LikesKey(Guid postId) => $"post:likes:{postId}";
 
@@ -27,13 +27,13 @@ namespace SoulViet.Modules.Social.Social.Application.Features.PostLikes.Commands
             IPostLikeRepository postLikeRepository,
             IUnitOfWork unitOfWork,
             ICacheService cacheService,
-            ILikeEventService likeEventService)
+            MassTransit.IPublishEndpoint publishEndpoint)
         {
             _postRepository = postRepository;
             _postLikeRepository = postLikeRepository;
             _unitOfWork = unitOfWork;
             _cacheService = cacheService;
-            _likeEventService = likeEventService;
+            _publishEndpoint = publishEndpoint;
         }
 
         public async Task<PostLikeResult> Handle(LikePostCommand request, CancellationToken cancellationToken)
@@ -48,11 +48,14 @@ namespace SoulViet.Modules.Social.Social.Application.Features.PostLikes.Commands
                     var post = await _postRepository.GetByIdAsync(request.PostId, cancellationToken);
                     currentCount = post?.LikesCount ?? 0;
                 }
-                return new PostLikeResult(true, (int)currentCount.Value, request.PostId);
+                return new PostLikeResult(true, (int)currentCount.Value, request.PostId, request.UserId);
             }
 
             try 
             {
+                var post = await _postRepository.GetByIdAsync(request.PostId, cancellationToken);
+                if (post == null) throw new NotFoundException($"Post with ID {request.PostId} not found.");
+
                 var postLike = new PostLike
                 {
                     PostId = request.PostId,
@@ -68,9 +71,17 @@ namespace SoulViet.Modules.Social.Social.Application.Features.PostLikes.Commands
                 var redisKey = LikesKey(request.PostId);
                 var newCount = await _cacheService.IncrementAsync(redisKey, cancellationToken);
 
-                var result = new PostLikeResult(true, (int)newCount, request.PostId);
+                var result = new PostLikeResult(true, (int)newCount, request.PostId, request.UserId);
                 
-                _ = _likeEventService.PublishLikeChangedAsync(request.PostId, result, cancellationToken);
+                // Publish notification event
+                await _publishEndpoint.Publish(new PostLikedEvent
+                {
+                    PostId = request.PostId,
+                    PostOwnerId = post.UserId,
+                    ActorId = request.UserId,
+                    ActorName = request.UserName,
+                    CreatedAt = DateTime.UtcNow
+                }, cancellationToken);
 
                 return result;
             }
@@ -78,7 +89,7 @@ namespace SoulViet.Modules.Social.Social.Application.Features.PostLikes.Commands
             {
                 // Nếu lỗi do bản ghi Like đã tồn tại (Race condition), trả về kết quả hiện tại
                 var post = await _postRepository.GetByIdAsync(request.PostId, cancellationToken);
-                return new PostLikeResult(true, post?.LikesCount ?? 0, request.PostId);
+                return new PostLikeResult(true, post?.LikesCount ?? 0, request.PostId, request.UserId);
             }
         }
     }

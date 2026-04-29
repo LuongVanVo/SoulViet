@@ -1,4 +1,4 @@
-﻿using SoulViet.Modules.Social.Social.Application.DTOs;
+using SoulViet.Modules.Social.Social.Application.DTOs;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -17,7 +17,7 @@ namespace SoulViet.Modules.Social.Social.Application.Features.PostComments.Resul
         public string Content { get; set; } = string.Empty;
         public DateTime CreatedAt { get; set; }
         public Guid? ParentCommentId { get; set; }
-
+        public int RepliesCount { get; set; }
         public List<PostCommentResponse> Replies { get; set; } = new();
     }
 }
