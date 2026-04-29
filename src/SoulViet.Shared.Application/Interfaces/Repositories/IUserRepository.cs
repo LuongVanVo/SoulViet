@@ -1,4 +1,4 @@
-﻿using SoulViet.Shared.Domain.Entities;
+using SoulViet.Shared.Domain.Entities;
 
 namespace SoulViet.Shared.Application.Interfaces.Repositories;
 
@@ -24,4 +24,7 @@ public interface IUserRepository
 
     // Update user
     Task UpdateUserAsync(User user);
+
+    // Get multiple users by ids
+    Task<List<User>> GetUsersByIdsAsync(IEnumerable<Guid> userIds);
 }

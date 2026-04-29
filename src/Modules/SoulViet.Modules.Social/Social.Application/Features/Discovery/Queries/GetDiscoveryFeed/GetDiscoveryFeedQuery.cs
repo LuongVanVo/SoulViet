@@ -12,6 +12,7 @@ namespace SoulViet.Modules.Social.Social.Application.Features.Discovery.Queries.
         public double RadiusKm { get; set; } = 10; // Mặc định 10km
         public VibeTag? VibeTag { get; set; }
         public string SortBy { get; set; } = "trending"; // trending, nearby, newest
+        public Guid? CurrentUserId { get; set; }
         
         public string? After { get; set; }
         public int First { get; set; } = 10;

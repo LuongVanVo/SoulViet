@@ -133,9 +133,16 @@ public class PostController : ControllerBase
         [FromQuery] string sortBy = "newest",
         CancellationToken cancellationToken = default)
     {
+        Guid? currentUserId = null;
+        if (User.Identity?.IsAuthenticated == true)
+        {
+            currentUserId = User.GetCurrentUserId();
+        }
+
         var query = new GetPostByUserIdQuery
         {
             UserId = userId,
+            CurrentUserId = currentUserId,
             After = after,
             First = first,
             SortBy = string.IsNullOrWhiteSpace(sortBy) ? "newest" : sortBy.ToLowerInvariant()

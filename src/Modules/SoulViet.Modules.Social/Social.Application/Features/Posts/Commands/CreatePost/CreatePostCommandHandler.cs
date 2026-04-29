@@ -13,12 +13,14 @@ namespace SoulViet.Modules.Social.Social.Application.Features.Posts.Commands.Cre
 public class CreatePostCommandHandler : IRequestHandler<CreatePostCommand, PostResponse>
 {
     private readonly IPostRepository _postRepository;
+    private readonly IUserService _userService;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMapper _mapper;
 
-    public CreatePostCommandHandler(IPostRepository postRepository, IUnitOfWork unitOfWork, IMapper mapper)
+    public CreatePostCommandHandler(IPostRepository postRepository, IUserService userService, IUnitOfWork unitOfWork, IMapper mapper)
     {
         _postRepository = postRepository;
+        _userService = userService;
         _unitOfWork = unitOfWork;
         _mapper = mapper;
     }
@@ -42,6 +44,7 @@ public class CreatePostCommandHandler : IRequestHandler<CreatePostCommand, PostR
             TaggedProductIds = request.TaggedProductIds ?? new List<Guid>(),
             VibeTag = request.VibeTag,
             CheckinLocationId = request.CheckinLocationId,
+            CheckinLocationName = request.CheckinLocationName,
             AspectRatio = request.AspectRatio,
             LikesCount = 0,
             CommentsCount = 0,
@@ -53,6 +56,15 @@ public class CreatePostCommandHandler : IRequestHandler<CreatePostCommand, PostR
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         var response = _mapper.Map<PostResponse>(post);
+
+        // Lấy thông tin user
+        var userInfos = await _userService.GetUsersMinimalInfoAsync(new[] { post.UserId }, cancellationToken);
+        if (userInfos.TryGetValue(post.UserId, out var userInfo))
+        {
+            response.AuthorName = userInfo.FullName;
+            response.AvatarUrl = userInfo.AvatarUrl;
+        }
+
         response.Success = true;
         response.Message = "Post created successfully.";
         return response;

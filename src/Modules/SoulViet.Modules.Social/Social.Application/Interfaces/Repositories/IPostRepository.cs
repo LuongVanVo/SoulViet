@@ -17,6 +17,7 @@ public interface IPostRepository
         int limit,
         CancellationToken cancellationToken);
     Task<(List<Post> Items, int TotalCount)> GetDiscoveryPagedAsync(
+        Guid? currentUserId,
         List<Guid>? nearbyLocationIds,
         VibeTag? vibeTag,
         string sortBy,
@@ -29,4 +30,6 @@ public interface IPostRepository
     void Update(Post post);
     Task SoftDeleteAsync(Post post, CancellationToken cancellationToken);
     void RemoveMedia(IEnumerable<PostMedia> media);
+    Task IncrementLikesCountAsync(Guid postId, CancellationToken cancellationToken);
+    Task DecrementLikesCountAsync(Guid postId, CancellationToken cancellationToken);
 }

@@ -799,6 +799,9 @@ namespace SoulViet.API.Migrations
                     b.Property<Guid?>("CheckinLocationId")
                         .HasColumnType("uuid");
 
+                    b.Property<string>("CheckinLocationName")
+                        .HasColumnType("text");
+
                     b.Property<int>("CommentsCount")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")

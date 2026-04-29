@@ -38,41 +38,48 @@ namespace SoulViet.Modules.Social.Social.Application.Features.PostLikes.Commands
 
         public async Task<PostLikeResult> Handle(LikePostCommand request, CancellationToken cancellationToken)
         {
-            var post = await _postRepository.GetByIdAsync(request.PostId, cancellationToken);
-            if (post == null)
-                throw new NotFoundException("Post not found");
-
-            var existingLike = await _postLikeRepository.GetPostLikeAsync(request.PostId, request.UserId, cancellationToken);
-            if (existingLike != null)
+            var isAlreadyLiked = await _postLikeRepository.GetPostLikeAsync(request.PostId, request.UserId, cancellationToken) != null;
+            
+            if (isAlreadyLiked)
             {
-                var cached = await _cacheService.GetAsync<long?>(LikesKey(request.PostId), cancellationToken);
-                return new PostLikeResult(true, (int)(cached ?? post.LikesCount), request.PostId);
+                var currentCount = await _cacheService.GetAsync<long?>(LikesKey(request.PostId), cancellationToken);
+                if (!currentCount.HasValue)
+                {
+                    var post = await _postRepository.GetByIdAsync(request.PostId, cancellationToken);
+                    currentCount = post?.LikesCount ?? 0;
+                }
+                return new PostLikeResult(true, (int)currentCount.Value, request.PostId);
             }
 
-            var postLike = new PostLike
+            try 
             {
-                PostId = request.PostId,
-                UserId = request.UserId,
-                CreatedAt = DateTime.UtcNow
-            };
-            await _postLikeRepository.AddAsync(postLike, cancellationToken);
+                var postLike = new PostLike
+                {
+                    PostId = request.PostId,
+                    UserId = request.UserId,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                };
+                await _postLikeRepository.AddAsync(postLike, cancellationToken);
+                
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
+                await _postRepository.IncrementLikesCountAsync(request.PostId, cancellationToken);
 
-            var redisKey = LikesKey(request.PostId);
-            var existsInRedis = await _cacheService.GetAsync<long?>(redisKey, cancellationToken);
-            if (existsInRedis == null)
-                await _cacheService.SetAsync(redisKey, (long)post.LikesCount, cancellationToken: cancellationToken);
+                var redisKey = LikesKey(request.PostId);
+                var newCount = await _cacheService.IncrementAsync(redisKey, cancellationToken);
 
-            var newCount = await _cacheService.IncrementAsync(redisKey, cancellationToken);
+                var result = new PostLikeResult(true, (int)newCount, request.PostId);
+                
+                _ = _likeEventService.PublishLikeChangedAsync(request.PostId, result, cancellationToken);
 
-            post.LikesCount = (int)newCount;
-            _postRepository.Update(post);
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-            var result = new PostLikeResult(true, (int)newCount, request.PostId);
-            
-            await _likeEventService.PublishLikeChangedAsync(request.PostId, result, cancellationToken);
-
-            return result;
+                return result;
+            }
+            catch (Exception ex)
+            {
+                // Nếu lỗi do bản ghi Like đã tồn tại (Race condition), trả về kết quả hiện tại
+                var post = await _postRepository.GetByIdAsync(request.PostId, cancellationToken);
+                return new PostLikeResult(true, post?.LikesCount ?? 0, request.PostId);
+            }
         }
     }
 }
