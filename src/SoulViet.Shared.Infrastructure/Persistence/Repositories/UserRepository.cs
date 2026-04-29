@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using SoulViet.Shared.Application.DTOs;
 using SoulViet.Shared.Application.Interfaces.Repositories;
 using SoulViet.Shared.Domain.Entities;
 
@@ -63,4 +64,30 @@ public class UserRepository(SharedDbContext dbContext) : IUserRepository
             .Where(x => userIds.Contains(x.Id))
             .ToListAsync();
     }
+
+    public async Task<LocalPartnerInfoDto?> GetLocalPartnerInfoByUserIdAsync(Guid userId)
+    {
+        var query = from user in _dbContext.Users
+            join localPartner in _dbContext.LocalPartnerProfiles
+                on user.Id equals localPartner.UserId
+            where user.Id == userId
+            select new LocalPartnerInfoDto
+            {
+                Id = localPartner.Id,
+                UserId = user.Id,
+                BusinessName = localPartner.BusinessName,
+                AvatarUrl = user.AvatarUrl,
+                Description = localPartner.Description,
+                PartnerType = localPartner.PartnerType,
+                IsAuthenticCertified = localPartner.IsAuthenticCertified,
+                TaxId = localPartner.TaxId,
+                Roles = _dbContext.UserRoles
+                    .Where(ur => ur.UserId == user.Id)
+                    .Select(ur => ur.Role.Name)
+                    .ToList()
+            };
+
+        return await query.FirstOrDefaultAsync();
+    }
+
 }

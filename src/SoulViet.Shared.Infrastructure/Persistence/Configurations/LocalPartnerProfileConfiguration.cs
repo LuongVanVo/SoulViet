@@ -4,7 +4,7 @@ using SoulViet.Shared.Domain.Entities;
 
 namespace SoulViet.Shared.Infrastructure.Persistence.Configurations
 {
-    public class LocalPartnerProfileConfiguration
+    public class LocalPartnerProfileConfiguration : IEntityTypeConfiguration<LocalPartnerProfile>
     {
         public void Configure(EntityTypeBuilder<LocalPartnerProfile> builder)
         {

@@ -1,3 +1,4 @@
+using SoulViet.Shared.Application.DTOs;
 using SoulViet.Shared.Domain.Entities;
 
 namespace SoulViet.Shared.Application.Interfaces.Repositories;
@@ -27,4 +28,7 @@ public interface IUserRepository
 
     // Get multiple users by ids
     Task<List<User>> GetUsersByIdsAsync(IEnumerable<Guid> userIds);
+
+    // Get info localpartner by user id
+    Task<LocalPartnerInfoDto?> GetLocalPartnerInfoByUserIdAsync(Guid userId);
 }
