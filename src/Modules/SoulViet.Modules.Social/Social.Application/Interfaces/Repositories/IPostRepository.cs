@@ -8,6 +8,7 @@ namespace SoulViet.Modules.Social.Social.Application.Interfaces.Repositories;
 public interface IPostRepository
 {
     Task<Post?> GetByIdAsync(Guid id, CancellationToken cancellationToken);
+    Task<int> GetPostsCountByUserIdAsync(Guid userId, CancellationToken cancellationToken);
     Task<(IEnumerable<Post> Items, int TotalCount)> GetPostsByUserIdAsync(Guid userId, int page, int pageSize, CancellationToken cancellationToken);
     Task<(List<Post> Items, int TotalCount)> GetPagedByUserIdAsync(
         Guid userId,

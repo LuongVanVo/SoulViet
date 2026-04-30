@@ -82,16 +82,16 @@ public class GetPostByIdQueryHandler : IRequestHandler<GetPostByIdQuery, PostRes
                 response.OriginalPost.CheckinLocationName = opLocName;
             }
 
-            if (request.UserId != Guid.Empty)
+            if (request.UserId.HasValue && request.UserId.Value != Guid.Empty)
             {
-                var opLike = await _postLikeRepository.GetPostLikeAsync(post.OriginalPost.Id, request.UserId, cancellationToken);
+                var opLike = await _postLikeRepository.GetPostLikeAsync(post.OriginalPost.Id, request.UserId.Value, cancellationToken);
                 response.OriginalPost.IsLiked = opLike != null;
             }
         }
 
-        if (request.UserId != Guid.Empty)
+        if (request.UserId.HasValue && request.UserId.Value != Guid.Empty)
         {
-            var like = await _postLikeRepository.GetPostLikeAsync(post.Id, request.UserId, cancellationToken);
+            var like = await _postLikeRepository.GetPostLikeAsync(post.Id, request.UserId.Value, cancellationToken);
             response.IsLiked = like != null;
         }
 

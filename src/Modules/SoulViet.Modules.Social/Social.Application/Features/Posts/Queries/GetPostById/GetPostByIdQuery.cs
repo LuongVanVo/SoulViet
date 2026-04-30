@@ -6,6 +6,6 @@ namespace SoulViet.Modules.Social.Social.Application.Features.Posts.Queries.GetP
 public class GetPostByIdQuery : IRequest<PostResponse>
 {
     public Guid Id { get; set; }        
-    public Guid UserId { get; set; }
+    public Guid? UserId { get; set; }
 }
 

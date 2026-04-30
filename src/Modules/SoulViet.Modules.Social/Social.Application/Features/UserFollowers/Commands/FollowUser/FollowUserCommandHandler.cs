@@ -42,7 +42,12 @@ namespace SoulViet.Modules.Social.Social.Application.Features.UserFollowers.Comm
             var isFollowing = await _followerRepository.ExistsAsync(request.FollowerId, request.FollowingId, cancellationToken);
             if (isFollowing)
             {
-                return new FollowerResponse { Success = true, Message = "Đã theo dõi người dùng này." };
+                return new FollowerResponse { 
+                    Success = true, 
+                    Message = "Đã theo dõi người dùng này.",
+                    IsFollowing = true,
+                    UserId = request.FollowingId
+                };
             }
 
             var follow = new UserFollower
@@ -64,9 +69,11 @@ namespace SoulViet.Modules.Social.Social.Application.Features.UserFollowers.Comm
             await _cacheService.ZAddAsync(followingKey, request.FollowingId, score, cancellationToken);
             await _cacheService.ZAddAsync(followersKey, request.FollowerId, score, cancellationToken);
 
-            var users = await _userService.GetUsersMinimalInfoAsync(new[] { request.FollowerId }, cancellationToken);
-            var followerName = users.ContainsKey(request.FollowerId) ? users[request.FollowerId].FullName : "Ai đó";
+            var userIds = new[] { request.FollowerId, request.FollowingId };
+            var users = await _userService.GetUsersMinimalInfoAsync(userIds, cancellationToken);
 
+            var followerName = users.ContainsKey(request.FollowerId) ? users[request.FollowerId].FullName : "Anonymous";
+            var followingUser = users.ContainsKey(request.FollowingId) ? users[request.FollowingId] : null;
             await _publishEndpoint.Publish(new UserFollowedEvent
             {
                 FollowerId = request.FollowerId,
@@ -74,8 +81,15 @@ namespace SoulViet.Modules.Social.Social.Application.Features.UserFollowers.Comm
                 FollowingId = request.FollowingId,
                 CreatedAt = follow.CreatedAt
             }, cancellationToken);
-
-            return new FollowerResponse { Success = true, Message = "Theo dõi thành công." };
+            return new FollowerResponse
+            {
+                Success = true,
+                Message = "Đã theo dõi.",
+                IsFollowing = true, 
+                UserId = request.FollowingId,
+                FullName = followingUser?.FullName ?? "Unknown", 
+                AvatarUrl = followingUser?.AvatarUrl
+            };
         }
     }
 }

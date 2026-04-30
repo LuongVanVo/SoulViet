@@ -6,7 +6,9 @@ namespace SoulViet.Modules.Social.Social.Application.Interfaces.Repositories
     {
         Task<UserFollower?> GetAsync(Guid followerId, Guid followingId, CancellationToken cancellationToken = default);
         Task<IEnumerable<UserFollower>> GetFollowersAsync(Guid userId, CancellationToken cancellationToken = default);
+        Task<int> GetFollowersCountAsync(Guid userId, CancellationToken cancellationToken = default);
         Task<IEnumerable<UserFollower>> GetFollowingAsync(Guid userId, CancellationToken cancellationToken = default);
+        Task<int> GetFollowingCountAsync(Guid userId, CancellationToken cancellationToken = default);
         Task<(List<UserFollower> Items, int TotalCount)> GetPagedFollowersAsync(
             Guid userId,
             string sortBy,
