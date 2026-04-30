@@ -33,4 +33,5 @@ public interface IPostRepository
     Task IncrementLikesCountAsync(Guid postId, CancellationToken cancellationToken);
     Task DecrementLikesCountAsync(Guid postId, CancellationToken cancellationToken);
     Task UpdateCommentsCountAsync(Guid postId, int delta, CancellationToken cancellationToken);
+    Task DecrementSharesCountAsync(Guid postId, CancellationToken cancellationToken);
 }

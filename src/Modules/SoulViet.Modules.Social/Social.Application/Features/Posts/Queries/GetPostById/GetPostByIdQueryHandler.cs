@@ -40,25 +40,55 @@ public class GetPostByIdQueryHandler : IRequestHandler<GetPostByIdQuery, PostRes
 
         var response = _mapper.Map<PostResponse>(post);
 
-        // Lấy thông tin user
-        var userInfos = await _userService.GetUsersMinimalInfoAsync(new[] { post.UserId }, cancellationToken);
+        var userIdsToFetch = new List<Guid> { post.UserId };
+        if (post.OriginalPost != null)
+        {
+            userIdsToFetch.Add(post.OriginalPost.UserId);
+        }
+
+        var userInfos = await _userService.GetUsersMinimalInfoAsync(userIdsToFetch, cancellationToken);
+        
         if (userInfos.TryGetValue(post.UserId, out var userInfo))
         {
             response.AuthorName = userInfo.FullName;
             response.AvatarUrl = userInfo.AvatarUrl;
         }
 
-        // Lấy tên địa điểm từ SoulMap
-        if (post.CheckinLocationId.HasValue)
+        var locationIdsToFetch = new List<Guid>();
+        if (post.CheckinLocationId.HasValue) locationIdsToFetch.Add(post.CheckinLocationId.Value);
+        if (post.OriginalPost?.CheckinLocationId != null) locationIdsToFetch.Add(post.OriginalPost.CheckinLocationId.Value);
+
+        Dictionary<Guid, string> locationNames = new();
+        if (locationIdsToFetch.Any())
         {
-            var locationNames = await _soulMapService.GetLocationNamesAsync(new[] { post.CheckinLocationId.Value }, cancellationToken);
-            if (locationNames.TryGetValue(post.CheckinLocationId.Value, out var locName))
+            locationNames = await _soulMapService.GetLocationNamesAsync(locationIdsToFetch, cancellationToken);
+        }
+
+        if (post.CheckinLocationId.HasValue && locationNames.TryGetValue(post.CheckinLocationId.Value, out var locName))
+        {
+            response.CheckinLocationName = locName;
+        }
+
+        if (post.OriginalPost != null && response.OriginalPost != null)
+        {
+            if (userInfos.TryGetValue(post.OriginalPost.UserId, out var opUserInfo))
             {
-                response.CheckinLocationName = locName;
+                response.OriginalPost.AuthorName = opUserInfo.FullName;
+                response.OriginalPost.AvatarUrl = opUserInfo.AvatarUrl;
+            }
+
+            if (post.OriginalPost.CheckinLocationId.HasValue && locationNames.TryGetValue(post.OriginalPost.CheckinLocationId.Value, out var opLocName))
+            {
+                response.OriginalPost.CheckinLocationName = opLocName;
+            }
+
+            if (request.UserId != Guid.Empty)
+            {
+                var opLike = await _postLikeRepository.GetPostLikeAsync(post.OriginalPost.Id, request.UserId, cancellationToken);
+                response.OriginalPost.IsLiked = opLike != null;
             }
         }
 
-        // Kiểm tra like
         if (request.UserId != Guid.Empty)
         {
             var like = await _postLikeRepository.GetPostLikeAsync(post.Id, request.UserId, cancellationToken);

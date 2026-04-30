@@ -22,6 +22,12 @@ namespace SoulViet.Modules.Social.Social.Infrastructure.Persistence.Configuratio
             builder.Property(x => x.VibeTag).HasConversion<int>().IsRequired();
 
             builder.HasIndex(x => x.CheckinLocationId);
+            builder.HasIndex(x => x.OriginalPostId);
+
+            builder.HasOne(x => x.OriginalPost)
+                .WithMany()
+                .HasForeignKey(x => x.OriginalPostId)
+                .OnDelete(DeleteBehavior.SetNull);
 
             builder.Property(x => x.LikesCount).HasDefaultValue(0);
             builder.Property(x => x.CommentsCount).HasDefaultValue(0);

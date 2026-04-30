@@ -860,6 +860,8 @@ namespace SoulViet.API.Migrations
 
                     b.HasIndex("CheckinLocationId");
 
+                    b.HasIndex("OriginalPostId");
+
                     b.HasIndex("UserId");
 
                     b.ToTable("Posts", "social");
@@ -1797,6 +1799,16 @@ namespace SoulViet.API.Migrations
                         .IsRequired();
 
                     b.Navigation("MasterOrder");
+                });
+
+            modelBuilder.Entity("SoulViet.Modules.Social.Social.Domain.Entities.Post", b =>
+                {
+                    b.HasOne("SoulViet.Modules.Social.Social.Domain.Entities.Post", "OriginalPost")
+                        .WithMany()
+                        .HasForeignKey("OriginalPostId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("OriginalPost");
                 });
 
             modelBuilder.Entity("SoulViet.Modules.Social.Social.Domain.Entities.PostComment", b =>

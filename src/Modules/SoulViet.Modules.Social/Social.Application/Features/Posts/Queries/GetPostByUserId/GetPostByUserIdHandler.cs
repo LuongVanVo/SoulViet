@@ -56,19 +56,25 @@ namespace SoulViet.Modules.Social.Social.Application.Features.Posts.Queries.GetP
             var hasNextPage = items.Count > request.First;
             var postsToReturn = items.Take(request.First).ToList();
 
-            // Lấy thông tin user
-            var userIds = postsToReturn.Select(p => p.UserId).Distinct().ToList();
+            // Lấy thông tin user (bao gồm cả tác giả bài gốc nếu là bài share)
+            var userIds = postsToReturn.Select(p => p.UserId)
+                .Concat(postsToReturn.Where(p => p.OriginalPost != null).Select(p => p.OriginalPost!.UserId))
+                .Distinct().ToList();
             var userInfos = await _userService.GetUsersMinimalInfoAsync(userIds, cancellationToken);
 
-            // Lấy tên địa điểm từ SoulMap
-            var locationIds = postsToReturn.Where(p => p.CheckinLocationId.HasValue).Select(p => p.CheckinLocationId!.Value).Distinct().ToList();
-            var locationNames = await _soulMapService.GetLocationNamesAsync(locationIds, cancellationToken);
+            // Lấy tên địa điểm từ SoulMap (cho cả bài chính và bài gốc)
+            var allLocationIds = postsToReturn.Where(p => p.CheckinLocationId.HasValue).Select(p => p.CheckinLocationId!.Value)
+                .Concat(postsToReturn.Where(p => p.OriginalPost != null && p.OriginalPost.CheckinLocationId.HasValue).Select(p => p.OriginalPost!.CheckinLocationId!.Value))
+                .Distinct().ToList();
+            var locationNames = await _soulMapService.GetLocationNamesAsync(allLocationIds, cancellationToken);
 
-            // Kiểm tra like
+            // Kiểm tra like (bao gồm cả bài gốc)
             var likedPostIds = new HashSet<Guid>();
             if (request.CurrentUserId.HasValue)
             {
-                var postIds = postsToReturn.Select(p => p.Id).ToList();
+                var postIds = postsToReturn.Select(p => p.Id)
+                    .Concat(postsToReturn.Where(p => p.OriginalPost != null).Select(p => p.OriginalPost!.Id))
+                    .ToList();
                 var likedIds = await _postLikeRepository.GetLikedPostIdsAsync(request.CurrentUserId.Value, postIds, cancellationToken);
                 likedPostIds = new HashSet<Guid>(likedIds);
             }
@@ -82,13 +88,28 @@ namespace SoulViet.Modules.Social.Social.Application.Features.Posts.Queries.GetP
                     response.AvatarUrl = userInfo.AvatarUrl;
                 }
 
-                // Gán tên địa điểm (Ưu tiên SoulMap > Denormalized Name)
                 if (p.CheckinLocationId.HasValue && locationNames.TryGetValue(p.CheckinLocationId.Value, out var locName))
                 {
                     response.CheckinLocationName = locName;
                 }
 
                 response.IsLiked = likedPostIds.Contains(p.Id);
+
+                if (p.OriginalPost != null && response.OriginalPost != null)
+                {
+                    if (userInfos.TryGetValue(p.OriginalPost.UserId, out var opUserInfo))
+                    {
+                        response.OriginalPost.AuthorName = opUserInfo.FullName;
+                        response.OriginalPost.AvatarUrl = opUserInfo.AvatarUrl;
+                    }
+
+                    if (p.OriginalPost.CheckinLocationId.HasValue && locationNames.TryGetValue(p.OriginalPost.CheckinLocationId.Value, out var opLocName))
+                    {
+                        response.OriginalPost.CheckinLocationName = opLocName;
+                    }
+
+                    response.OriginalPost.IsLiked = likedPostIds.Contains(p.OriginalPost.Id);
+                }
 
                 return new Edge<PostResponse>
                 {
