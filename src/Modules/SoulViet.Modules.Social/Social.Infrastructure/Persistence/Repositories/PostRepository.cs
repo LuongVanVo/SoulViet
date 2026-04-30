@@ -23,6 +23,11 @@ public class PostRepository : IPostRepository
                 .ThenInclude(op => op!.Media)
             .FirstOrDefaultAsync(p => p.Id == id, cancellationToken);
     }
+    public async Task<int> GetPostsCountByUserIdAsync(Guid userId, CancellationToken cancellationToken)
+    {
+        return await _dbContext.Posts
+            .CountAsync(p => p.UserId == userId && !p.IsDeleted && p.Status == PostStatus.Published, cancellationToken);
+    }
     public async Task<(IEnumerable<Post> Items, int TotalCount)> GetPostsByUserIdAsync(Guid userId, int page, int pageSize, CancellationToken cancellationToken)
     {
         var query = _dbContext.Posts

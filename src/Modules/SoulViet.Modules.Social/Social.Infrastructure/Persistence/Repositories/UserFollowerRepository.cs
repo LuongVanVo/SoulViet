@@ -27,6 +27,10 @@ namespace SoulViet.Modules.Social.Social.Infrastructure.Persistence.Repositories
                 .OrderByDescending(x => x.CreatedAt)
                 .ToListAsync(cancellationToken);
         }
+        public async Task<int> GetFollowersCountAsync(Guid userId, CancellationToken cancellationToken = default)
+        {
+            return await _context.UserFollowers.CountAsync(x => x.FollowingId == userId, cancellationToken);
+        }
 
         public async Task<IEnumerable<UserFollower>> GetFollowingAsync(Guid userId, CancellationToken cancellationToken = default)
         {
@@ -34,6 +38,10 @@ namespace SoulViet.Modules.Social.Social.Infrastructure.Persistence.Repositories
                 .Where(x => x.FollowerId == userId)
                 .OrderByDescending(x => x.CreatedAt)
                 .ToListAsync(cancellationToken);
+        }
+        public async Task<int> GetFollowingCountAsync(Guid userId, CancellationToken cancellationToken = default)
+        {
+            return await _context.UserFollowers.CountAsync(x => x.FollowerId == userId, cancellationToken);
         }
         public async Task<(List<UserFollower> Items, int TotalCount)> GetPagedFollowersAsync(
             Guid userId,

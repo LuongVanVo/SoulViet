@@ -40,6 +40,7 @@ public class PostController : ControllerBase
     }
 
     [HttpGet("{id:guid}")]
+    [AllowAnonymous]
     [SwaggerOperation(
         Summary = "Get post by id",
         Description = "Retrieves a specific post by its ID."
@@ -48,10 +49,16 @@ public class PostController : ControllerBase
         [FromRoute] Guid id,
         CancellationToken cancellationToken)
     {
+        Guid? userId = null;
+        if (User.Identity?.IsAuthenticated == true)
+        {
+            userId = User.GetCurrentUserId();
+        }
+
         var query = new GetPostByIdQuery
         {
             Id = id,
-            UserId = User.GetCurrentUserId()
+            UserId = userId
         };
 
         var result = await _mediator.Send(query, cancellationToken);
