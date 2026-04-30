@@ -19,13 +19,18 @@ public class PostRepository : IPostRepository
     {
         return await _dbContext.Posts
             .Include(p => p.Media)
+            .Include(p => p.OriginalPost)
+                .ThenInclude(op => op!.Media)
             .FirstOrDefaultAsync(p => p.Id == id, cancellationToken);
     }
     public async Task<(IEnumerable<Post> Items, int TotalCount)> GetPostsByUserIdAsync(Guid userId, int page, int pageSize, CancellationToken cancellationToken)
     {
         var query = _dbContext.Posts
             .Include(p => p.Media)
-            .Where(p => p.UserId == userId && !p.IsDeleted && p.Status == PostStatus.Published) // Giả sử chỉ lấy post đã public
+            .Include(p => p.OriginalPost)
+                .ThenInclude(op => op!.Media)
+            .Where(p => p.UserId == userId && !p.IsDeleted && p.Status == PostStatus.Published)
+            .Where(p => p.OriginalPostId == null || (!p.OriginalPost!.IsDeleted && p.OriginalPost!.Status == PostStatus.Published))
             .OrderByDescending(p => p.CreatedAt);
 
         var totalCount = await query.CountAsync(cancellationToken);
@@ -48,7 +53,10 @@ public class PostRepository : IPostRepository
     {
         var query = _dbContext.Posts
             .Include(p => p.Media)
-            .Where(p => p.UserId == userId && !p.IsDeleted && p.Status == PostStatus.Published);
+            .Include(p => p.OriginalPost)
+                .ThenInclude(op => op!.Media)
+            .Where(p => p.UserId == userId && !p.IsDeleted && p.Status == PostStatus.Published)
+            .Where(p => p.OriginalPostId == null || (!p.OriginalPost!.IsDeleted && p.OriginalPost!.Status == PostStatus.Published));
 
         var totalCount = await query.CountAsync(cancellationToken);
 
@@ -92,7 +100,10 @@ public class PostRepository : IPostRepository
     {
         var query = _dbContext.Posts
             .Include(p => p.Media)
-            .Where(p => !p.IsDeleted && p.Status == PostStatus.Published);
+            .Include(p => p.OriginalPost)
+                .ThenInclude(op => op!.Media)
+            .Where(p => !p.IsDeleted && p.Status == PostStatus.Published)
+            .Where(p => p.OriginalPostId == null || (!p.OriginalPost!.IsDeleted && p.OriginalPost!.Status == PostStatus.Published));
 
         if (vibeTag.HasValue)
         {
@@ -204,6 +215,13 @@ public class PostRepository : IPostRepository
         await _dbContext.Posts
             .Where(p => p.Id == postId)
             .ExecuteUpdateAsync(s => s.SetProperty(p => p.CommentsCount, p => p.CommentsCount + delta), cancellationToken);
+    }
+
+    public async Task DecrementSharesCountAsync(Guid postId, CancellationToken cancellationToken)
+    {
+        await _dbContext.Posts
+            .Where(p => p.Id == postId)
+            .ExecuteUpdateAsync(s => s.SetProperty(p => p.SharesCount, p => p.SharesCount > 0 ? p.SharesCount - 1 : 0), cancellationToken);
     }
 }
 

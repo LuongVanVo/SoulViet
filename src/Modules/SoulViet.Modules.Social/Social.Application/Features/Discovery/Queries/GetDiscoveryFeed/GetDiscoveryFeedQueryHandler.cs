@@ -76,15 +76,22 @@ namespace SoulViet.Modules.Social.Social.Application.Features.Discovery.Queries.
 
             var hasNextPage = items.Count > request.First;
             var postsToReturn = items.Take(request.First).ToList();
-            var userIds = postsToReturn.Select(p => p.UserId).Distinct().ToList();
+            var userIds = postsToReturn.Select(p => p.UserId)
+                .Concat(postsToReturn.Where(p => p.OriginalPost != null).Select(p => p.OriginalPost!.UserId))
+                .Distinct().ToList();
             var userInfos = await _userService.GetUsersMinimalInfoAsync(userIds, cancellationToken);
-            var locationIds = postsToReturn.Where(p => p.CheckinLocationId.HasValue).Select(p => p.CheckinLocationId!.Value).Distinct().ToList();
-            var locationNames = await _soulMapService.GetLocationNamesAsync(locationIds, cancellationToken);
+            
+            var allLocationIds = postsToReturn.Where(p => p.CheckinLocationId.HasValue).Select(p => p.CheckinLocationId!.Value)
+                .Concat(postsToReturn.Where(p => p.OriginalPost != null && p.OriginalPost.CheckinLocationId.HasValue).Select(p => p.OriginalPost!.CheckinLocationId!.Value))
+                .Distinct().ToList();
+            var locationNames = await _soulMapService.GetLocationNamesAsync(allLocationIds, cancellationToken);
 
             var likedPostIds = new HashSet<Guid>();
             if (request.CurrentUserId.HasValue)
             {
-                var postIds = postsToReturn.Select(p => p.Id).ToList();
+                var postIds = postsToReturn.Select(p => p.Id)
+                    .Concat(postsToReturn.Where(p => p.OriginalPost != null).Select(p => p.OriginalPost!.Id))
+                    .ToList();
                 var likedIds = await _postLikeRepository.GetLikedPostIdsAsync(request.CurrentUserId.Value, postIds, cancellationToken);
                 likedPostIds = new HashSet<Guid>(likedIds);
             }
@@ -104,6 +111,23 @@ namespace SoulViet.Modules.Social.Social.Application.Features.Discovery.Queries.
                 }
 
                 response.IsLiked = likedPostIds.Contains(p.Id);
+
+                // Map OriginalPost details if exists
+                if (p.OriginalPost != null && response.OriginalPost != null)
+                {
+                    if (userInfos.TryGetValue(p.OriginalPost.UserId, out var opUserInfo))
+                    {
+                        response.OriginalPost.AuthorName = opUserInfo.FullName;
+                        response.OriginalPost.AvatarUrl = opUserInfo.AvatarUrl;
+                    }
+
+                    if (p.OriginalPost.CheckinLocationId.HasValue && locationNames.TryGetValue(p.OriginalPost.CheckinLocationId.Value, out var opLocName))
+                    {
+                        response.OriginalPost.CheckinLocationName = opLocName;
+                    }
+
+                    response.OriginalPost.IsLiked = likedPostIds.Contains(p.OriginalPost.Id);
+                }
                 
                 return new Edge<PostResponse>
                 {

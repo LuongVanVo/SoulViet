@@ -11,7 +11,8 @@ public class PostProfile : Profile
     public PostProfile()
     {
         CreateMap<Post, PostResponse>()
-            .ForMember(dest => dest.Media, opt => opt.MapFrom(src => src.Media));
+            .ForMember(dest => dest.Media, opt => opt.MapFrom(src => src.Media))
+            .ForMember(dest => dest.OriginalPost, opt => opt.MapFrom(src => src.OriginalPost));
         CreateMap<Post, PostDto>()
             .ForMember(dest => dest.Media, opt => opt.MapFrom(src => src.Media));
         CreateMap<PostMedia, MediaItemDto>();

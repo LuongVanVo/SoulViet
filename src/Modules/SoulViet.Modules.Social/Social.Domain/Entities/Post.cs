@@ -14,6 +14,7 @@ namespace SoulViet.Modules.Social.Social.Domain.Entities
         public Guid? CheckinLocationId { get; set; } // Link to SoulMap
         public string? CheckinLocationName { get; set; }
         public Guid? OriginalPostId { get; set; } // Link to source post when shared to Timeline
+        public Post? OriginalPost { get; set; }
 
         public int LikesCount { get; set; } = 0;
         public int CommentsCount { get; set; } = 0;
