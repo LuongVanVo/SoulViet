@@ -52,10 +52,22 @@ public class CancelOrderHandler : IRequestHandler<CancelOrderCommand, bool>
                 // Restore stock
                 foreach (var item in vendorOrder.OrderItems)
                 {
-                    var product = await _marketplaceProductRepository.GetByIdAsync(item.ProductId, cancellationToken);
+                    var product = await _marketplaceProductRepository.GetByIdWithDetailsAsync(item.ProductId, cancellationToken);
                     if (product != null)
                     {
-                        product.Stock += item.Quantity;
+                        if (item.VariantId.HasValue)
+                        {
+                            var variant = product.Variants.FirstOrDefault(v => v.Id == item.VariantId.Value);
+                            if (variant != null)
+                            {
+                                variant.Stock += item.Quantity;
+                            }
+                        }
+                        else
+                        {
+                            product.Stock += item.Quantity;
+                        }
+
                         await _marketplaceProductRepository.UpdateAsync(product, cancellationToken);
                     }
                 }

@@ -38,7 +38,9 @@ public class OrderProfile : Profile
             .ForMember(dest => dest.ProductName,
                 opt => opt.MapFrom(src => src.ProductNameSnapshot))
             .ForMember(dest => dest.ProductImage,
-                opt => opt.MapFrom(src => src.ProductImageSnapshot));
+                opt => opt.MapFrom(src => src.ProductImageSnapshot))
+            .ForMember(dest => dest.VariantNameSnapshot,
+                opt => opt.MapFrom(src => src.VariantNameSnapshot));
 
         CreateMap<Order, VendorOrderDetailDto>()
             .ForMember(dest => dest.Status,

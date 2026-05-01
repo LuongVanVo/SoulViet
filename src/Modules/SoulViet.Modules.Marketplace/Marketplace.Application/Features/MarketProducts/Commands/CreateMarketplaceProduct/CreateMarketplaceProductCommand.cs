@@ -1,4 +1,5 @@
 ﻿using MediatR;
+using SoulViet.Modules.Marketplace.Marketplace.Application.DTOs;
 using SoulViet.Modules.Marketplace.Marketplace.Application.Features.MarketProducts.Results;
 using SoulViet.Modules.Marketplace.Marketplace.Domain.Enums;
 
@@ -21,4 +22,9 @@ public class CreateMarketplaceProductCommand : IRequest<MarketplaceProductRespon
     public string MainImage { get; set; } = string.Empty;
     public List<string> LandImages { get; set; } = new();
     public string VideoUrl { get; set; } = string.Empty;
+
+    public bool HasVariants { get; set; } = false;
+    public List<ProductAttributeDto> Attributes { get; set; } = new();
+    public List<ProductVariantDto> Variants { get; set; } = new();
+
 }

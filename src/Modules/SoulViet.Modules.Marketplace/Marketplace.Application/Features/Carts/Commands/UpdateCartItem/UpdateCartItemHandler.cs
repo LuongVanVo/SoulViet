@@ -32,11 +32,20 @@ public class UpdateCartItemHandler : IRequestHandler<UpdateCartItemCommand, Cart
         if (item == null)
             throw new NotFoundException("Cart item not found in cart.");
 
-        var product = await _productRepository.GetByIdAsync(item.MarketplaceProductId, cancellationToken);
+        var product = await _productRepository.GetByIdWithDetailsAsync(item.MarketplaceProductId, cancellationToken);
         if (product == null || !product.IsActive)
             throw new NotFoundException("Marketplace product is no longer available.");
 
-        if (request.NewQuantity > product.Stock)
+        int availableStock = product.Stock;
+        if (item.VariantId.HasValue)
+        {
+            var variant = product.Variants.FirstOrDefault(v => v.Id == item.VariantId.Value);
+            if (variant == null || !variant.IsActive)
+                throw new NotFoundException("Product variant is no longer available.");
+            availableStock = variant.Stock;
+        }
+
+        if (request.NewQuantity > availableStock)
             throw new BadRequestException($"Sorry, the product only has {product.Stock} items left in stock.");
 
         item.Quantity = request.NewQuantity;

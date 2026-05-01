@@ -24,6 +24,15 @@ public class MarketplaceProductRepository : IMarketplaceProductRepository
             .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
     }
 
+    public async Task<MarketProduct?> GetByIdWithDetailsAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        return await _dbContext.MarketProducts
+            .Include(x => x.MarketplaceCategory)
+            .Include(x => x.Attributes)
+            .Include(x => x.Variants)
+            .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+    }
+
     public Task UpdateAsync(MarketProduct product, CancellationToken cancellationToken = default)
     {
         _dbContext.MarketProducts.Update(product);
@@ -164,6 +173,8 @@ public class MarketplaceProductRepository : IMarketplaceProductRepository
 
         return await _dbContext.MarketProducts // Ensure this matches your DbSet name in MarketplaceDbContext
             .Include(p => p.Media)             // Include Media to avoid null reference on MainImage
+            .Include(p => p.Attributes)
+            .Include(p => p.Variants)
             .Where(p => ids.Contains(p.Id))
             .ToListAsync(cancellationToken);
     }

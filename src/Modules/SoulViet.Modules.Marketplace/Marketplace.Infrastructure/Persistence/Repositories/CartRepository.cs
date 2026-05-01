@@ -55,6 +55,8 @@ public class CartRepository : ICartRepository
         return await _dbContext.Carts
             .Include(x => x.Items)
                 .ThenInclude(i => i.MarketplaceProduct)
+            .Include(x => x.Items)
+                .ThenInclude(i => i.Variant)
             .FirstOrDefaultAsync(c => c.UserId == userId, cancellationToken);
     }
 
@@ -136,14 +138,20 @@ public class CartRepository : ICartRepository
                 {
                     dbItem.Quantity = item.Quantity;
                     dbItem.ItemMetadata = item.ItemMetadata;
+                    dbItem.VariantId = item.VariantId;
                     existingDbItems.Remove(item.Id);
                 }
                 else
                 {
-                    var newItem = _mapper.Map<CartItem>(item);
-                    newItem.CartId = dbCart.Id;
-                    newItem.MarketplaceProduct = null!;
-                    newItem.Cart = null!;
+                    var newItem = new CartItem
+                    {
+                        Id = item.Id == Guid.Empty ? Guid.NewGuid() : item.Id,
+                        CartId = dbCart.Id,
+                        MarketplaceProductId = item.MarketplaceProductId,
+                        VariantId = item.VariantId,
+                        Quantity = item.Quantity,
+                        ItemMetadata = item.ItemMetadata
+                    };
 
                     if (newItem.Id == Guid.Empty) newItem.Id = Guid.NewGuid();
                     dbContext.CartItems.Add(newItem);
@@ -168,6 +176,10 @@ public class CartRepository : ICartRepository
     {
         return await _dbContext.CartItems
             .Include(ci => ci.MarketplaceProduct)
+            .ThenInclude(p => p.Variants)
+            .Include(ci => ci.MarketplaceProduct)
+            .ThenInclude(p => p.Media)
+            .Include(ci => ci.Variant)
             .Where(ci => ci.Cart.UserId == userId && itemIds.Contains(ci.Id))
             .ToListAsync(cancellationToken);
     }

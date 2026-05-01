@@ -1,5 +1,4 @@
-﻿// GetMyCartHandler.cs
-using AutoMapper;
+﻿using AutoMapper;
 using MediatR;
 using SoulViet.Modules.Marketplace.Marketplace.Application.DTOs;
 using SoulViet.Modules.Marketplace.Marketplace.Application.Interfaces.Repositories;
@@ -29,37 +28,77 @@ public class GetCartQueryHandler : IRequestHandler<GetMyCartQuery, CartDto>
             return new CartDto { UserId = request.UserId };
 
         var productIds = cart.Items.Select(i => i.MarketplaceProductId).Distinct().ToList();
+
         var currentProducts = await _productRepository.GetByIdsAsync(productIds, cancellationToken);
         var productDict = currentProducts.ToDictionary(p => p.Id);
 
         var cartDto = _mapper.Map<CartDto>(cart);
-
-        bool needsRedisUpdate = true;
+        bool needsRedisUpdate = false;
 
         foreach (var itemDto in cartDto.Items.ToList())
         {
-            if (productDict.TryGetValue(itemDto.MarketplaceProductId, out var latestProduct))
+            var domainItem = cart.Items.First(i => i.Id == itemDto.Id);
+
+            if (productDict.TryGetValue(itemDto.MarketplaceProductId, out var latestProduct) && latestProduct.IsActive && !latestProduct.IsDeleted)
             {
-                itemDto.ProductName = latestProduct.Name;
-                itemDto.MainImage = latestProduct.Media.MainImage;
-                itemDto.Price = latestProduct.Price;
-                itemDto.PromotionalPrice = latestProduct.PromotionalPrice;
-                itemDto.Stock = latestProduct.Stock;
+                int currentStock = latestProduct.Stock;
+                decimal currentPrice = latestProduct.Price;
+                decimal? currentPromoPrice = latestProduct.PromotionalPrice;
+                string currentImage = latestProduct.Media.MainImage;
 
-                if (itemDto.Quantity > latestProduct.Stock)
+                if (domainItem.VariantId.HasValue)
                 {
-                    itemDto.Quantity = latestProduct.Stock;
+                    var variant = latestProduct.Variants.FirstOrDefault(v => v.Id == domainItem.VariantId.Value);
 
-                    var domainItem = cart.Items.First(i => i.Id == itemDto.Id);
-                    domainItem.Quantity = itemDto.Quantity;
+                    if (variant != null && variant.IsActive)
+                    {
+                        currentStock = variant.Stock;
+                        currentPrice = variant.Price;
+                        currentPromoPrice = variant.PromotionalPrice;
+                        currentImage = !string.IsNullOrEmpty(variant.ImageUrl) ? variant.ImageUrl : latestProduct.Media.MainImage;
+
+                        // Gán AttributesJson để UI hiển thị
+                        itemDto.VariantAttributesJson = variant.AttributesJson;
+                    }
+                    else
+                    {
+                        // Biến thể đã bị xóa/ẩn -> Xóa khỏi giỏ
+                        cartDto.Items.Remove(itemDto);
+                        cart.Items.Remove(domainItem);
+                        needsRedisUpdate = true;
+                        continue;
+                    }
+                }
+
+                // Cập nhật thông tin hiển thị
+                itemDto.ProductName = latestProduct.Name;
+                itemDto.MainImage = currentImage;
+                itemDto.Price = currentPrice;
+                itemDto.PromotionalPrice = currentPromoPrice;
+                itemDto.Stock = currentStock;
+
+                // Xử lý tồn kho
+                if (itemDto.Quantity > currentStock)
+                {
+                    if (currentStock <= 0)
+                    {
+                        cartDto.Items.Remove(itemDto);
+                        cart.Items.Remove(domainItem);
+                    }
+                    else
+                    {
+                        itemDto.Quantity = currentStock;
+                        domainItem.Quantity = currentStock;
+                    }
+                    needsRedisUpdate = true;
                 }
             }
             else
             {
+                // Sản phẩm gốc đã bị xóa/ẩn
                 cartDto.Items.Remove(itemDto);
-
-                var domainItem = cart.Items.First(i => i.Id == itemDto.Id);
                 cart.Items.Remove(domainItem);
+                needsRedisUpdate = true;
             }
         }
 

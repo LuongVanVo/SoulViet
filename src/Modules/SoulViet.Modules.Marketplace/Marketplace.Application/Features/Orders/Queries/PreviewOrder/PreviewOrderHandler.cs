@@ -49,15 +49,37 @@ public class PreviewOrderHandler : IRequestHandler<PreviewOrderQuery, PreviewOrd
             // Calculate subtotal for this shop
             foreach (var cartItem in group)
             {
-                var itemTotalPrice = (cartItem.MarketplaceProduct.PromotionalPrice ?? cartItem.MarketplaceProduct.Price) * cartItem.Quantity;
+                var product = cartItem.MarketplaceProduct; // Đây là Product gốc
+                decimal unitPrice = product.PromotionalPrice ?? product.Price; // Mặc định là giá gốc
+
+                string? variantAttributes = null;
+
+                if (cartItem.VariantId.HasValue && product.HasVariants)
+                {
+                    var variant = product.Variants.FirstOrDefault(v => v.Id == cartItem.VariantId.Value);
+                    if (variant != null && variant.IsActive)
+                    {
+                        unitPrice = variant.PromotionalPrice ?? variant.Price; // Ghi đè giá bằng giá của biến thể
+                        variantAttributes = variant.AttributesJson;
+                    }
+                    else
+                    {
+                        throw new BadRequestException($"Biến thể của sản phẩm {product.Name} không tồn tại hoặc đã ngưng bán.");
+                    }
+                }
+
+                // SỬ DỤNG unitPrice Ở ĐÂY
+                var itemTotalPrice = unitPrice * cartItem.Quantity;
                 vendorOrder.SubTotal += itemTotalPrice;
 
                 vendorOrder.Items.Add(new PreviewOrderItem
                 {
                     CartItemId = cartItem.Id,
                     ProductId = cartItem.MarketplaceProductId,
+                    VariantId = cartItem.VariantId,
+                    VariantAttributesJson = variantAttributes,
                     ProductName = cartItem.MarketplaceProduct.Name,
-                    UnitPrice = cartItem.MarketplaceProduct.PromotionalPrice ?? cartItem.MarketplaceProduct.Price,
+                    UnitPrice = unitPrice, // VÀ SỬ DỤNG Ở ĐÂY NỮA
                     Quantity = cartItem.Quantity
                 });
 

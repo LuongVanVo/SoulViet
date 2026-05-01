@@ -10,7 +10,7 @@ namespace SoulViet.Modules.Marketplace.Marketplace.Domain.Entities
 
         public string ProductNameSnapshot { get; set; } = string.Empty;
         public string ProductImageSnapshot { get; set; } = string.Empty;
-
+        public string? VariantNameSnapshot { get; set; }
         public int Quantity { get; set; }
         public decimal UnitPrice { get; set; }
 
@@ -29,5 +29,8 @@ namespace SoulViet.Modules.Marketplace.Marketplace.Domain.Entities
         public bool IsSettled { get; set; } = false; // Đánh dấu đã được thanh toán cho đối tác
         public Guid? PayoutBatchId { get; set; } // Id của batch payout nếu đã được thanh toán (thuộc đợt thanh toán nào)
         public Order Order { get; set; } = null!;
+
+        public Guid? VariantId { get; set; }
+        public ProductVariant? Variant { get; set; }
     }
 }

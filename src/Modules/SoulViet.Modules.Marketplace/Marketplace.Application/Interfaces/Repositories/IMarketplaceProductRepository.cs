@@ -9,6 +9,8 @@ public interface IMarketplaceProductRepository
 
     // Get product by id
     Task<MarketProduct?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
+    // Get product by id with details (including category, partner, attributes, variants)
+    Task<MarketProduct?> GetByIdWithDetailsAsync(Guid id, CancellationToken cancellationToken = default);
 
     // Update product
     Task UpdateAsync(MarketProduct product, CancellationToken cancellationToken = default);
