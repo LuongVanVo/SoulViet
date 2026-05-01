@@ -9,4 +9,6 @@ public class AddToCartCommand : IRequest<CartDto>
     public Guid MarketplaceProductId { get; set; }
     public int Quantity { get; set; }
     public string? ItemMetadata { get; set; }
+
+    public Guid? VariantId { get; set; }
 }

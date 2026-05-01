@@ -13,4 +13,6 @@ public class CartItem : BaseAuditableEntity
     public int Quantity { get; set; }
 
     public string? ItemMetadata { get; set; }
+    public Guid? VariantId { get; set; }
+    public ProductVariant? Variant { get; set; }
 }

@@ -95,23 +95,47 @@ public class CreateOrderHandler(
                 decimal subTotal = 0;
                 bool hasPhysicalGoods = false;
 
+                // Trong file CreateOrderHandler.cs, vòng lặp foreach (var cartItem in group)
+
                 foreach (var cartItem in group)
                 {
                     var product = cartItem.MarketplaceProduct;
+                    int currentStock = product.Stock;
+                    decimal unitPrice = product.PromotionalPrice ?? product.Price; // Mặc định giá gốc
 
-                    // subtract stock quantity
-                    if (product.Stock < cartItem.Quantity)
-                        throw new BadRequestException($"Product '{product.Name}' is out of stock. Available quantity: {product.Stock}.");
+                    // Đừng dùng cartItem.Variant, hãy truy vấn từ product.Variants
+                    ProductVariant? variant = null;
 
-                    product.Stock -= cartItem.Quantity;
+                    if (cartItem.VariantId.HasValue && product.HasVariants)
+                    {
+                        variant = product.Variants.FirstOrDefault(v => v.Id == cartItem.VariantId.Value);
+                        if (variant != null && variant.IsActive)
+                        {
+                            currentStock = variant.Stock;
+                            unitPrice = variant.PromotionalPrice ?? variant.Price; // Ghi đè giá biến thể
+                        }
+                        else
+                        {
+                             throw new BadRequestException($"Biến thể của sản phẩm {product.Name} không tồn tại hoặc đã ngưng bán.");
+                        }
+                    }
+
+                    if (currentStock < cartItem.Quantity)
+                        throw new BadRequestException($"Sản phẩm '{product.Name}' không đủ số lượng. Chỉ còn {currentStock}.");
+
+                    // Trừ kho
+                    if (variant != null)
+                        variant.Stock -= cartItem.Quantity;
+                    else
+                        product.Stock -= cartItem.Quantity;
+
                     await _marketplaceProductRepository.UpdateAsync(product, cancellationToken);
 
                     decimal commissionRate = product.ProductType == ProductType.PhysicalGoods ? 5.0m : 15.0m;
                     decimal platformFee = 2000m;
 
-                    decimal unitPrice = product.PromotionalPrice ?? product.Price;
+                    // SỬ DỤNG unitPrice ĐỂ TÍNH TỔNG
                     decimal totalPrice = unitPrice * cartItem.Quantity;
-
                     decimal totalCommissionForThisItem = totalPrice * (commissionRate / 100);
                     decimal partnerEarnings = totalPrice - totalCommissionForThisItem - platformFee;
 
@@ -121,11 +145,13 @@ public class CreateOrderHandler(
                         Id = Guid.NewGuid(),
                         OrderId = vendorOrder.Id,
                         ProductId = product.Id,
+                        VariantId = variant?.Id,
                         ProductNameSnapshot = product.Name,
-                        ProductImageSnapshot = product.Media.MainImage ?? "",
+                        VariantNameSnapshot = variant?.AttributesJson,
+                        ProductImageSnapshot = !string.IsNullOrEmpty(variant?.ImageUrl) ? variant.ImageUrl : (product.Media.MainImage ?? ""),
                         ProductTypeSnapshot = product.ProductType,
                         Quantity = cartItem.Quantity,
-                        UnitPrice = product.PromotionalPrice ?? product.Price,
+                        UnitPrice = unitPrice, // SỬA CHỖ NÀY: Dùng unitPrice thay vì product.PromotionalPrice ?? product.Price
                         ItemMetadata = cartItem.ItemMetadata,
                         CommissionRate = commissionRate,
                         PlatformFee = platformFee,
@@ -133,6 +159,7 @@ public class CreateOrderHandler(
                     };
 
                     vendorOrder.OrderItems.Add(orderItem);
+                    // DÙNG orderItem.UnitPrice LÀ AN TOÀN NHẤT
                     subTotal += orderItem.UnitPrice * orderItem.Quantity;
 
                     if (product.ProductType == ProductType.PhysicalGoods)

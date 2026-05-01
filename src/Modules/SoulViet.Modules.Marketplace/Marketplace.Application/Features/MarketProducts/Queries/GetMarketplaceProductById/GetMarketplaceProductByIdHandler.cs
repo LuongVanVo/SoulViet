@@ -18,7 +18,7 @@ public class GetMarketplaceProductByIdHandler : IRequestHandler<GetMarketplacePr
 
     public async Task<MarketplaceProductDto> Handle(GetMarketplaceProductByIdQuery request, CancellationToken cancellationToken)
     {
-        var product = await _marketplaceProductRepository.GetByIdAsync(request.Id, cancellationToken);
+        var product = await _marketplaceProductRepository.GetByIdWithDetailsAsync(request.Id, cancellationToken);
         if (product == null)
             throw new NotFoundException("Product not found");
 

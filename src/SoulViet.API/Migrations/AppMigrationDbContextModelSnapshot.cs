@@ -84,11 +84,16 @@ namespace SoulViet.API.Migrations
                     b.Property<int>("Quantity")
                         .HasColumnType("integer");
 
+                    b.Property<Guid?>("VariantId")
+                        .HasColumnType("uuid");
+
                     b.HasKey("Id");
 
                     b.HasIndex("CartId");
 
                     b.HasIndex("MarketplaceProductId");
+
+                    b.HasIndex("VariantId");
 
                     b.ToTable("CartItems", "marketplace");
                 });
@@ -112,6 +117,9 @@ namespace SoulViet.API.Migrations
                         .IsRequired()
                         .HasMaxLength(4000)
                         .HasColumnType("character varying(4000)");
+
+                    b.Property<bool>("HasVariants")
+                        .HasColumnType("boolean");
 
                     b.Property<bool>("IsActive")
                         .ValueGeneratedOnAdd()
@@ -460,6 +468,12 @@ namespace SoulViet.API.Migrations
                     b.Property<decimal>("UnitPrice")
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<Guid?>("VariantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("VariantNameSnapshot")
+                        .HasColumnType("text");
+
                     b.HasKey("Id");
 
                     b.HasIndex("OrderId");
@@ -467,6 +481,8 @@ namespace SoulViet.API.Migrations
                     b.HasIndex("PayoutBatchId");
 
                     b.HasIndex("TicketCode");
+
+                    b.HasIndex("VariantId");
 
                     b.ToTable("OrderItems", "marketplace");
                 });
@@ -579,6 +595,98 @@ namespace SoulViet.API.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("PayoutBatches", "marketplace");
+                });
+
+            modelBuilder.Entity("SoulViet.Modules.Marketplace.Marketplace.Domain.Entities.ProductAttribute", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("LastModifiedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("LastModifiedBy")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("OptionsJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<Guid>("ProductId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProductId");
+
+                    b.ToTable("ProductAttributes", "marketplace");
+                });
+
+            modelBuilder.Entity("SoulViet.Modules.Marketplace.Marketplace.Domain.Entities.ProductVariant", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("AttributesJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("text");
+
+                    b.Property<string>("ImageUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime?>("LastModifiedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("LastModifiedBy")
+                        .HasColumnType("text");
+
+                    b.Property<decimal>("Price")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<Guid>("ProductId")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal?>("PromotionalPrice")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("Sku")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("Stock")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProductId");
+
+                    b.ToTable("ProductVariants", "marketplace");
                 });
 
             modelBuilder.Entity("SoulViet.Modules.Marketplace.Marketplace.Domain.Entities.Settlement", b =>
@@ -1719,9 +1827,15 @@ namespace SoulViet.API.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("SoulViet.Modules.Marketplace.Marketplace.Domain.Entities.ProductVariant", "Variant")
+                        .WithMany()
+                        .HasForeignKey("VariantId");
+
                     b.Navigation("Cart");
 
                     b.Navigation("MarketplaceProduct");
+
+                    b.Navigation("Variant");
                 });
 
             modelBuilder.Entity("SoulViet.Modules.Marketplace.Marketplace.Domain.Entities.MarketProduct", b =>
@@ -1787,7 +1901,13 @@ namespace SoulViet.API.Migrations
                         .HasForeignKey("PayoutBatchId")
                         .OnDelete(DeleteBehavior.Restrict);
 
+                    b.HasOne("SoulViet.Modules.Marketplace.Marketplace.Domain.Entities.ProductVariant", "Variant")
+                        .WithMany()
+                        .HasForeignKey("VariantId");
+
                     b.Navigation("Order");
+
+                    b.Navigation("Variant");
                 });
 
             modelBuilder.Entity("SoulViet.Modules.Marketplace.Marketplace.Domain.Entities.PaymentTransaction", b =>
@@ -1799,6 +1919,28 @@ namespace SoulViet.API.Migrations
                         .IsRequired();
 
                     b.Navigation("MasterOrder");
+                });
+
+            modelBuilder.Entity("SoulViet.Modules.Marketplace.Marketplace.Domain.Entities.ProductAttribute", b =>
+                {
+                    b.HasOne("SoulViet.Modules.Marketplace.Marketplace.Domain.Entities.MarketProduct", "Product")
+                        .WithMany("Attributes")
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Product");
+                });
+
+            modelBuilder.Entity("SoulViet.Modules.Marketplace.Marketplace.Domain.Entities.ProductVariant", b =>
+                {
+                    b.HasOne("SoulViet.Modules.Marketplace.Marketplace.Domain.Entities.MarketProduct", "Product")
+                        .WithMany("Variants")
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Product");
                 });
 
             modelBuilder.Entity("SoulViet.Modules.Social.Social.Domain.Entities.Post", b =>
@@ -2012,6 +2154,13 @@ namespace SoulViet.API.Migrations
             modelBuilder.Entity("SoulViet.Modules.Marketplace.Marketplace.Domain.Entities.Cart", b =>
                 {
                     b.Navigation("Items");
+                });
+
+            modelBuilder.Entity("SoulViet.Modules.Marketplace.Marketplace.Domain.Entities.MarketProduct", b =>
+                {
+                    b.Navigation("Attributes");
+
+                    b.Navigation("Variants");
                 });
 
             modelBuilder.Entity("SoulViet.Modules.Marketplace.Marketplace.Domain.Entities.MarketplaceCategory", b =>

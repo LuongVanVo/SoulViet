@@ -33,9 +33,26 @@ public class AddToCartHandler : IRequestHandler<AddToCartCommand, CartDto>
 
     public async Task<CartDto> Handle(AddToCartCommand request, CancellationToken cancellationToken)
     {
-        var product = await _marketplaceProductRepository.GetByIdAsync(request.MarketplaceProductId, cancellationToken);
+        var product = await _marketplaceProductRepository.GetByIdWithDetailsAsync(request.MarketplaceProductId, cancellationToken);
         if (product == null || !product.IsActive)
             throw new NotFoundException("Marketplace product not found or is inactive.");
+
+        ProductVariant? variant = null;
+        int availableStock = product.Stock;
+
+        if (product.HasVariants)
+        {
+            if (!request.VariantId.HasValue)
+                throw new BadRequestException("This product has many options, please select one of the options.");
+
+            variant = product.Variants.FirstOrDefault(v => v.Id == request.VariantId.Value);
+            if (variant == null || !variant.IsActive)
+                throw new NotFoundException("Selected variant not found or is inactive.");
+
+            availableStock = variant.Stock;
+        }
+        else if (request.VariantId.HasValue)
+            throw new BadRequestException("This product does not have variants, variant selection is not required.");
 
         var cart = await _cartRepository.GetByUserIdAsync(request.UserId, cancellationToken);
         if (cart == null)
@@ -43,24 +60,27 @@ public class AddToCartHandler : IRequestHandler<AddToCartCommand, CartDto>
             cart = new Cart { UserId = request.UserId, Items = new List<CartItem>() };
         }
 
-        var existingItem = cart.GetCartItem(request.MarketplaceProductId, request.ItemMetadata);
+        var existingItem = cart.GetCartItem(request.MarketplaceProductId, request.VariantId, request.ItemMetadata);
         if (existingItem != null)
         {
-            if (existingItem.Quantity + request.Quantity > product.Stock)
+            if (existingItem.Quantity + request.Quantity > availableStock)
                 throw new BadRequestException("Requested quantity exceeds available stock.");
 
             existingItem.Quantity += request.Quantity;
             existingItem.MarketplaceProduct = product;
+            existingItem.Variant = variant;
         }
         else
         {
-            if (request.Quantity > product.Stock)
+            if (request.Quantity > availableStock)
                 throw new BadRequestException("Requested quantity exceeds available stock.");
 
             cart.Items.Add(new CartItem
             {
                 Id = Guid.NewGuid(),
                 MarketplaceProductId = request.MarketplaceProductId,
+                VariantId = request.VariantId,
+                Variant = variant,
                 Quantity = request.Quantity,
                 ItemMetadata = request.ItemMetadata,
                 MarketplaceProduct = product
@@ -69,6 +89,24 @@ public class AddToCartHandler : IRequestHandler<AddToCartCommand, CartDto>
 
         await _cartRepository.SaveCartAsync(request.UserId, cart, cancellationToken);
 
-        return _mapper.Map<CartDto>(cart);
+        var cartDto = _mapper.Map<CartDto>(cart);
+
+        if (request.VariantId.HasValue && variant != null)
+        {
+            var updatedItemDto = cartDto.Items.FirstOrDefault(i =>
+                i.MarketplaceProductId == request.MarketplaceProductId &&
+                i.VariantId == request.VariantId);
+
+            if (updatedItemDto != null)
+            {
+                updatedItemDto.VariantAttributesJson = variant.AttributesJson;
+                updatedItemDto.MainImage = !string.IsNullOrEmpty(variant.ImageUrl) ? variant.ImageUrl : product.Media.MainImage;
+                updatedItemDto.Price = variant.Price;
+                updatedItemDto.PromotionalPrice = variant.PromotionalPrice;
+                updatedItemDto.Stock = variant.Stock;
+            }
+        }
+
+        return cartDto;
     }
 }

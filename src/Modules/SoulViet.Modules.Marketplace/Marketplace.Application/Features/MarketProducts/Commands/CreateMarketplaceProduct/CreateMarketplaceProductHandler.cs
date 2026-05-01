@@ -35,6 +35,38 @@ public class CreateMarketplaceProductHandler : IRequestHandler<CreateMarketplace
         var product = _mapper.Map<MarketProduct>(request);
         product.Id = Guid.NewGuid();
 
+        if (product.HasVariants)
+        {
+            if (!product.Attributes.Any() || !product.Variants.Any())
+                throw new BadRequestException(
+                    "Product marked as having variants must have at least one attribute and one variant");
+
+            foreach (var attr in product.Attributes)
+            {
+                attr.ProductId = product.Id;
+            }
+
+            foreach (var variant in product.Variants)
+            {
+                variant.ProductId = product.Id;
+            }
+
+            product.Price = product.Variants.Min(v => v.Price);
+
+            var promotionalPrices = product.Variants
+                .Where(v => v.PromotionalPrice.HasValue)
+                .Select(v => v.PromotionalPrice.Value);
+
+            product.PromotionalPrice = promotionalPrices.Any() ? promotionalPrices.Min() : null;
+
+            product.Stock = product.Variants.Sum(v => v.Stock);
+        }
+        else
+        {
+            product.Attributes.Clear();
+            product.Variants.Clear();
+        }
+
         await _marketplaceProductRepository.AddAsync(product, cancellationToken);
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);

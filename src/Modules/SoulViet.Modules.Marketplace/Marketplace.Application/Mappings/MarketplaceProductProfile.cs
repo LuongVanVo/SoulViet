@@ -10,6 +10,9 @@ public class MarketplaceProductProfile : Profile
 {
     public MarketplaceProductProfile()
     {
+        CreateMap<ProductAttributeDto, ProductAttribute>().ReverseMap();
+        CreateMap<ProductVariantDto, ProductVariant>().ReverseMap();
+
         CreateMap<CreateMarketplaceProductCommand, MarketProduct>()
             .ForMember(dest => dest.Id, opt => opt.Ignore())
             .ForMember(dest => dest.IsActive, opt => opt.MapFrom(src => true))
@@ -32,6 +35,9 @@ public class MarketplaceProductProfile : Profile
             .ForMember(dest => dest.Id, opt => opt.Ignore())
             .ForMember(dest => dest.PartnerId, opt => opt.Ignore())
             .ForMember(dest => dest.IsVerifiedByAdmin, opt => opt.Ignore())
+
+            .ForMember(dest => dest.Attributes, opt => opt.Ignore())
+            .ForMember(dest => dest.Variants, opt => opt.Ignore())
 
             .ForMember(dest => dest.CategoryId, opt => opt.MapFrom((src, dest) => src.CategoryId ?? dest.CategoryId))
             .ForMember(dest => dest.Price, opt => opt.MapFrom((src, dest) => src.Price ?? dest.Price))

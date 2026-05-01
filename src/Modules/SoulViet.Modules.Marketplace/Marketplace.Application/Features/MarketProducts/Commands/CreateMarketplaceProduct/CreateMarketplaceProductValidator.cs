@@ -22,13 +22,13 @@ public class CreateMarketplaceProductValidator : AbstractValidator<CreateMarketp
             .NotEmpty().WithMessage("Product description is required.")
             .MaximumLength(4000).WithMessage("Product description must not exceed 4000 characters.");
 
-        RuleFor(x => x.Price)
-            .NotEmpty().WithMessage("Price is required.")
-            .GreaterThan(0).WithMessage("Price must be greater than zero.");
-
-        RuleFor(x => x.Stock)
-            .NotEmpty().WithMessage("Stock is required.")
-            .GreaterThanOrEqualTo(0).WithMessage("Stock cannot be negative.");
+        // RuleFor(x => x.Price)
+        //     .NotEmpty().WithMessage("Price is required.")
+        //     .GreaterThan(0).WithMessage("Price must be greater than zero.");
+        //
+        // RuleFor(x => x.Stock)
+        //     .NotEmpty().WithMessage("Stock is required.")
+        //     .GreaterThanOrEqualTo(0).WithMessage("Stock cannot be negative.");
 
         RuleFor(x => x.ProductType)
             .IsInEnum().WithMessage("Invalid product type.");

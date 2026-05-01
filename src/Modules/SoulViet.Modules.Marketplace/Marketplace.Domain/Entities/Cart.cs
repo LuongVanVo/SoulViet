@@ -7,10 +7,11 @@ public class Cart : BaseAuditableEntity
     public Guid UserId { get; set; }
     public ICollection<CartItem> Items { get; set; } = new List<CartItem>();
 
-    public CartItem? GetCartItem(Guid marketplaceProductId, string? metadata)
+    public CartItem? GetCartItem(Guid marketplaceProductId, Guid? variantId, string? metadata)
     {
         return Items.FirstOrDefault(x =>
             x.MarketplaceProductId == marketplaceProductId &&
+            x.VariantId == variantId &&
             x.ItemMetadata == metadata);
     }
 

@@ -5,6 +5,10 @@ public class CartItemDto
     public Guid Id { get; set; }
     public Guid MarketplaceProductId { get; set; }
 
+    // Variant info
+    public Guid? VariantId { get; set; }
+    public string? VariantAttributesJson { get; set; }
+
     // Info product
     public string ProductName { get; set; } = string.Empty;
     public string MainImage { get; set; } = string.Empty;

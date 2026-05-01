@@ -6,7 +6,6 @@ using Swashbuckle.AspNetCore.Annotations;
 
 namespace SoulViet.API.Controllers;
 
-[Authorize]
 [ApiController]
 [Route("api/[controller]")]
 public class MediaController : ControllerBase
@@ -38,6 +37,7 @@ public class MediaController : ControllerBase
     /// [FLOW 2] Request to get Presigned URL to FrontEnd from Backend, then FrontEnd will use this URL to upload file directly to Cloudflare R2, then return the URL to client
     /// Recommended for large file, thumbnail, avatar, etc. For small file, can use flow 1 to upload directly to Backend, then backend will upload to Cloudflare R2 and return the URL to client
     /// </summary>
+    [Authorize]
     [HttpGet("presigned-url")]
     [SwaggerOperation(Summary = "Get presigned URL to upload file directly to Cloudflare R2",
         Description =
@@ -53,6 +53,7 @@ public class MediaController : ControllerBase
         });
     }
 
+    [Authorize]
     [HttpPost("presigned-urls/social-post")]
     [SwaggerOperation(Summary = "Get multiple presigned URLs for social post media upload",
         Description =
@@ -64,6 +65,7 @@ public class MediaController : ControllerBase
         return Ok(new { success = true, data = results });
     }
 
+    [Authorize]
     [HttpPost("presigned-urls/attractions")]
     [SwaggerOperation(Summary = "Get multiple presigned URLs for attraction media upload",
         Description =
@@ -74,6 +76,7 @@ public class MediaController : ControllerBase
         return Ok(new { success = true, data = results });
     }
 
+    [Authorize]
     [HttpDelete("delete")]
     [SwaggerOperation(Summary = "Delete file from Cloudflare R2",
         Description = "This endpoint will delete file from Cloudflare R2 based on the provided object key (file path in R2).")]

@@ -24,4 +24,8 @@ public class MarketplaceProductDto
 
     public ProductMediaInfo Media { get; set; } = new();
     public DateTimeOffset CreatedAt { get; set; }
+
+    public bool HasVariants { get; set; }
+    public ICollection<ProductAttributeDto> Attributes { get; set; } = new List<ProductAttributeDto>();
+    public ICollection<ProductVariantDto> Variants { get; set; } = new List<ProductVariantDto>();
 }
