@@ -12,5 +12,6 @@ public class UserProfileResponse
     public int PostsCount { get; set; }
     public bool IsFollowing { get; set; }
     public bool IsFollower { get; set; }
+    public bool IsLocalPartner { get; set; }
     public List<string> Roles { get; set; } = new List<string>();
 }

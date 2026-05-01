@@ -111,6 +111,7 @@ namespace SoulViet.Modules.Social.Social.Application.Features.Discovery.Queries.
                 {
                     response.AuthorName = userInfo.FullName;
                     response.AvatarUrl = userInfo.AvatarUrl;
+                    response.IsLocalPartnerAuthor = userInfo.IsLocalPartner;
                 }
 
                 if (p.CheckinLocationId.HasValue && locationNames.TryGetValue(p.CheckinLocationId.Value, out var locName))
@@ -129,6 +130,7 @@ namespace SoulViet.Modules.Social.Social.Application.Features.Discovery.Queries.
                     {
                         response.OriginalPost.AuthorName = opUserInfo.FullName;
                         response.OriginalPost.AvatarUrl = opUserInfo.AvatarUrl;
+                        response.OriginalPost.IsLocalPartnerAuthor = opUserInfo.IsLocalPartner;
                     }
 
                     if (p.OriginalPost.CheckinLocationId.HasValue && locationNames.TryGetValue(p.OriginalPost.CheckinLocationId.Value, out var opLocName))

@@ -31,4 +31,7 @@ public interface IUserRepository
 
     // Get info localpartner by user id
     Task<LocalPartnerInfoDto?> GetLocalPartnerInfoByUserIdAsync(Guid userId);
+
+    // Get ids of users who are local partners
+    Task<List<Guid>> GetLocalPartnerIdsAsync(IEnumerable<Guid> userIds);
 }
