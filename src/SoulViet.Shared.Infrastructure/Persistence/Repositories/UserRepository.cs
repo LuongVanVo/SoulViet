@@ -89,5 +89,12 @@ public class UserRepository(SharedDbContext dbContext) : IUserRepository
 
         return await query.FirstOrDefaultAsync();
     }
-
+    
+    public async Task<List<Guid>> GetLocalPartnerIdsAsync(IEnumerable<Guid> userIds)
+    {
+        return await _dbContext.LocalPartnerProfiles
+            .Where(lp => userIds.Contains(lp.UserId))
+            .Select(lp => lp.UserId)
+            .ToListAsync();
+    }
 }

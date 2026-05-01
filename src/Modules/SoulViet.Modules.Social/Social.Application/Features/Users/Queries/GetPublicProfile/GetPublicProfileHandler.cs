@@ -42,6 +42,8 @@ namespace SoulViet.Modules.Social.Social.Application.Features.Users.Queries.GetP
                 isFollower = await _followerRepository.ExistsAsync(user.Id, request.CurrentUserId.Value, cancellationToken);
             }
 
+            var localPartnerInfo = await _identityUserRepository.GetLocalPartnerInfoByUserIdAsync(user.Id);
+
             return new UserProfileResponse
             {
                 Id = user.Id,
@@ -54,6 +56,7 @@ namespace SoulViet.Modules.Social.Social.Application.Features.Users.Queries.GetP
                 PostsCount = postsCount,
                 IsFollowing = isFollowing,
                 IsFollower = isFollower,
+                IsLocalPartner = roles.Any(r => r.Equals("LocalPartner", StringComparison.OrdinalIgnoreCase)) || localPartnerInfo != null,
                 Roles = roles
             };
         }

@@ -25,6 +25,7 @@ public class PostResponse
     public bool IsLiked { get; set; }
     public bool IsFollowingAuthor { get; set; }
     public bool IsFollowerAuthor { get; set; }
+    public bool IsLocalPartnerAuthor { get; set; }
     public PostStatus Status { get; set; }
     public PostResponse? OriginalPost { get; set; }
     public DateTime CreatedAt { get; set; }

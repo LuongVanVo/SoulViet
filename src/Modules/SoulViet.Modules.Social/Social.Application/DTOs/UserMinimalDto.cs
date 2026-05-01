@@ -9,5 +9,6 @@ namespace SoulViet.Modules.Social.Social.Application.DTOs
         public Guid Id { get; set; }
         public string FullName { get; set; } = string.Empty;
         public string? AvatarUrl { get; set; } = null;
+        public bool IsLocalPartner { get; set; } = false;
     }
 }

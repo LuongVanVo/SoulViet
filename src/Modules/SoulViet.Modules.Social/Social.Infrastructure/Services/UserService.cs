@@ -47,13 +47,18 @@ namespace SoulViet.Modules.Social.Social.Infrastructure.Services
             if (missingUserIds.Any())
             {
                 var dbUsers = await _userRepository.GetUsersByIdsAsync(missingUserIds);
+                var partnerIds = await _userRepository.GetLocalPartnerIdsAsync(missingUserIds);
+                var partnerIdSet = new HashSet<Guid>(partnerIds);
+
                 foreach (var user in dbUsers)
                 {
+                    var roles = await _userRepository.GetUserRolesAsync(user.Id);
                     var userDto = new UserMinimalDto
                     {
                         Id = user.Id,
                         FullName = user.FullName,
-                        AvatarUrl = user.AvatarUrl
+                        AvatarUrl = user.AvatarUrl,
+                        IsLocalPartner = roles.Any(r => r.Equals("LocalPartner", StringComparison.OrdinalIgnoreCase)) || partnerIdSet.Contains(user.Id)
                     };
 
                     result[user.Id] = userDto;
