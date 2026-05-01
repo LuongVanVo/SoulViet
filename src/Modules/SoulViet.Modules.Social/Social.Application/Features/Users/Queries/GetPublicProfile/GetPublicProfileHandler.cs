@@ -31,8 +31,16 @@ namespace SoulViet.Modules.Social.Social.Application.Features.Users.Queries.GetP
             var followersCount = await _followerRepository.GetFollowersCountAsync(user.Id, cancellationToken);
             var followingCount = await _followerRepository.GetFollowingCountAsync(user.Id, cancellationToken);
             var postsCount = await _postRepository.GetPostsCountByUserIdAsync(user.Id, cancellationToken);
-
             var roles = await _identityUserRepository.GetUserRolesAsync(user.Id);
+
+            bool isFollowing = false;
+            bool isFollower = false;
+
+            if (request.CurrentUserId.HasValue && request.CurrentUserId.Value != user.Id)
+            {
+                isFollowing = await _followerRepository.ExistsAsync(request.CurrentUserId.Value, user.Id, cancellationToken);
+                isFollower = await _followerRepository.ExistsAsync(user.Id, request.CurrentUserId.Value, cancellationToken);
+            }
 
             return new UserProfileResponse
             {
@@ -44,6 +52,8 @@ namespace SoulViet.Modules.Social.Social.Application.Features.Users.Queries.GetP
                 FollowersCount = followersCount,
                 FollowingCount = followingCount,
                 PostsCount = postsCount,
+                IsFollowing = isFollowing,
+                IsFollower = isFollower,
                 Roles = roles
             };
         }

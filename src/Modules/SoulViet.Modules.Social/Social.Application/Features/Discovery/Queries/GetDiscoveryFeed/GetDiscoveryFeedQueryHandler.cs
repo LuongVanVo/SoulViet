@@ -17,6 +17,7 @@ namespace SoulViet.Modules.Social.Social.Application.Features.Discovery.Queries.
     {
         private readonly IPostRepository _postRepository;
         private readonly IPostLikeRepository _postLikeRepository;
+        private readonly IUserFollowerRepository _followerRepository;
         private readonly ISoulMapService _soulMapService;
         private readonly IUserService _userService;
         private readonly IMapper _mapper;
@@ -24,12 +25,14 @@ namespace SoulViet.Modules.Social.Social.Application.Features.Discovery.Queries.
         public GetDiscoveryFeedQueryHandler(
             IPostRepository postRepository,
             IPostLikeRepository postLikeRepository,
+            IUserFollowerRepository followerRepository,
             ISoulMapService soulMapService,
             IUserService userService,
             IMapper mapper)
         {
             _postRepository = postRepository;
             _postLikeRepository = postLikeRepository;
+            _followerRepository = followerRepository;
             _soulMapService = soulMapService;
             _userService = userService;
             _mapper = mapper;
@@ -87,6 +90,8 @@ namespace SoulViet.Modules.Social.Social.Application.Features.Discovery.Queries.
             var locationNames = await _soulMapService.GetLocationNamesAsync(allLocationIds, cancellationToken);
 
             var likedPostIds = new HashSet<Guid>();
+            var followingUserIds = new HashSet<Guid>();
+            var followerUserIds = new HashSet<Guid>();
             if (request.CurrentUserId.HasValue)
             {
                 var postIds = postsToReturn.Select(p => p.Id)
@@ -94,6 +99,9 @@ namespace SoulViet.Modules.Social.Social.Application.Features.Discovery.Queries.
                     .ToList();
                 var likedIds = await _postLikeRepository.GetLikedPostIdsAsync(request.CurrentUserId.Value, postIds, cancellationToken);
                 likedPostIds = new HashSet<Guid>(likedIds);
+
+                followingUserIds = await _followerRepository.GetFollowingIdsAsync(request.CurrentUserId.Value, userIds, cancellationToken);
+                followerUserIds = await _followerRepository.GetFollowerIdsAsync(request.CurrentUserId.Value, userIds, cancellationToken);
             }
 
             var edges = postsToReturn.Select(p =>
@@ -111,6 +119,8 @@ namespace SoulViet.Modules.Social.Social.Application.Features.Discovery.Queries.
                 }
 
                 response.IsLiked = likedPostIds.Contains(p.Id);
+                response.IsFollowingAuthor = followingUserIds.Contains(p.UserId);
+                response.IsFollowerAuthor = followerUserIds.Contains(p.UserId);
 
                 // Map OriginalPost details if exists
                 if (p.OriginalPost != null && response.OriginalPost != null)
@@ -127,6 +137,8 @@ namespace SoulViet.Modules.Social.Social.Application.Features.Discovery.Queries.
                     }
 
                     response.OriginalPost.IsLiked = likedPostIds.Contains(p.OriginalPost.Id);
+                    response.OriginalPost.IsFollowingAuthor = followingUserIds.Contains(p.OriginalPost.UserId);
+                    response.OriginalPost.IsFollowerAuthor = followerUserIds.Contains(p.OriginalPost.UserId);
                 }
                 
                 return new Edge<PostResponse>

@@ -12,6 +12,7 @@ namespace SoulViet.Modules.Social.Social.Application.Features.Posts.Queries.GetP
     {
         private readonly IPostRepository _postRepository;
         private readonly IPostLikeRepository _postLikeRepository;
+        private readonly IUserFollowerRepository _followerRepository;
         private readonly ISoulMapService _soulMapService;
         private readonly IUserService _userService;
         private readonly IMapper _mapper;
@@ -19,12 +20,14 @@ namespace SoulViet.Modules.Social.Social.Application.Features.Posts.Queries.GetP
         public GetPostsByUserIdQueryHandler(
             IPostRepository postRepository, 
             IPostLikeRepository postLikeRepository, 
+            IUserFollowerRepository followerRepository,
             ISoulMapService soulMapService,
             IUserService userService, 
             IMapper mapper)
         {
             _postRepository = postRepository;
             _postLikeRepository = postLikeRepository;
+            _followerRepository = followerRepository;
             _soulMapService = soulMapService;
             _userService = userService;
             _mapper = mapper;
@@ -56,20 +59,19 @@ namespace SoulViet.Modules.Social.Social.Application.Features.Posts.Queries.GetP
             var hasNextPage = items.Count > request.First;
             var postsToReturn = items.Take(request.First).ToList();
 
-            // Lấy thông tin user (bao gồm cả tác giả bài gốc nếu là bài share)
             var userIds = postsToReturn.Select(p => p.UserId)
                 .Concat(postsToReturn.Where(p => p.OriginalPost != null).Select(p => p.OriginalPost!.UserId))
                 .Distinct().ToList();
             var userInfos = await _userService.GetUsersMinimalInfoAsync(userIds, cancellationToken);
 
-            // Lấy tên địa điểm từ SoulMap (cho cả bài chính và bài gốc)
             var allLocationIds = postsToReturn.Where(p => p.CheckinLocationId.HasValue).Select(p => p.CheckinLocationId!.Value)
                 .Concat(postsToReturn.Where(p => p.OriginalPost != null && p.OriginalPost.CheckinLocationId.HasValue).Select(p => p.OriginalPost!.CheckinLocationId!.Value))
                 .Distinct().ToList();
             var locationNames = await _soulMapService.GetLocationNamesAsync(allLocationIds, cancellationToken);
 
-            // Kiểm tra like (bao gồm cả bài gốc)
             var likedPostIds = new HashSet<Guid>();
+            var followingUserIds = new HashSet<Guid>();
+            var followerUserIds = new HashSet<Guid>();
             if (request.CurrentUserId.HasValue)
             {
                 var postIds = postsToReturn.Select(p => p.Id)
@@ -77,6 +79,9 @@ namespace SoulViet.Modules.Social.Social.Application.Features.Posts.Queries.GetP
                     .ToList();
                 var likedIds = await _postLikeRepository.GetLikedPostIdsAsync(request.CurrentUserId.Value, postIds, cancellationToken);
                 likedPostIds = new HashSet<Guid>(likedIds);
+
+                followingUserIds = await _followerRepository.GetFollowingIdsAsync(request.CurrentUserId.Value, userIds, cancellationToken);
+                followerUserIds = await _followerRepository.GetFollowerIdsAsync(request.CurrentUserId.Value, userIds, cancellationToken);
             }
 
             var edges = postsToReturn.Select(p =>
@@ -94,6 +99,8 @@ namespace SoulViet.Modules.Social.Social.Application.Features.Posts.Queries.GetP
                 }
 
                 response.IsLiked = likedPostIds.Contains(p.Id);
+                response.IsFollowingAuthor = followingUserIds.Contains(p.UserId);
+                response.IsFollowerAuthor = followerUserIds.Contains(p.UserId);
 
                 if (p.OriginalPost != null && response.OriginalPost != null)
                 {
@@ -109,6 +116,8 @@ namespace SoulViet.Modules.Social.Social.Application.Features.Posts.Queries.GetP
                     }
 
                     response.OriginalPost.IsLiked = likedPostIds.Contains(p.OriginalPost.Id);
+                    response.OriginalPost.IsFollowingAuthor = followingUserIds.Contains(p.OriginalPost.UserId);
+                    response.OriginalPost.IsFollowerAuthor = followerUserIds.Contains(p.OriginalPost.UserId);
                 }
 
                 return new Edge<PostResponse>

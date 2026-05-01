@@ -108,5 +108,27 @@ namespace SoulViet.Modules.Social.Social.Infrastructure.Persistence.Repositories
             return await _context.UserFollowers
                 .AnyAsync(x => x.FollowerId == followerId && x.FollowingId == followingId, cancellationToken);
         }
+
+        public async Task<HashSet<Guid>> GetFollowingIdsAsync(Guid followerId, IEnumerable<Guid> followingIds, CancellationToken cancellationToken = default)
+        {
+            var followingIdsList = followingIds.ToList();
+            var following = await _context.UserFollowers
+                .Where(x => x.FollowerId == followerId && followingIdsList.Contains(x.FollowingId))
+                .Select(x => x.FollowingId)
+                .ToListAsync(cancellationToken);
+
+            return new HashSet<Guid>(following);
+        }
+
+        public async Task<HashSet<Guid>> GetFollowerIdsAsync(Guid followingId, IEnumerable<Guid> followerIds, CancellationToken cancellationToken = default)
+        {
+            var followerIdsList = followerIds.ToList();
+            var followers = await _context.UserFollowers
+                .Where(x => x.FollowingId == followingId && followerIdsList.Contains(x.FollowerId))
+                .Select(x => x.FollowerId)
+                .ToListAsync(cancellationToken);
+
+            return new HashSet<Guid>(followers);
+        }
     }
 }

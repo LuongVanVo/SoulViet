@@ -7,6 +7,7 @@ namespace SoulViet.Modules.Social.Social.Application.Features.UserFollowers.Resu
         public Guid UserId { get; set; }
         public string FullName { get; set; } = string.Empty;
         public string? AvatarUrl { get; set; }
-        public bool IsFollowing { get; set; } 
+        public bool IsFollowing { get; set; }
+        public bool IsFollower { get; set; }
     }
 }

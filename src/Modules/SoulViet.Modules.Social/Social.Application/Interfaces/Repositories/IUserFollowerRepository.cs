@@ -26,5 +26,7 @@ namespace SoulViet.Modules.Social.Social.Application.Interfaces.Repositories
         Task AddAsync(UserFollower userFollower, CancellationToken cancellationToken = default);
         void Remove(UserFollower userFollower);
         Task<bool> ExistsAsync(Guid followerId, Guid followingId, CancellationToken cancellationToken = default);
+        Task<HashSet<Guid>> GetFollowingIdsAsync(Guid followerId, IEnumerable<Guid> followingIds, CancellationToken cancellationToken = default);
+        Task<HashSet<Guid>> GetFollowerIdsAsync(Guid followingId, IEnumerable<Guid> followerIds, CancellationToken cancellationToken = default);
     }
 }
