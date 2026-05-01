@@ -23,6 +23,8 @@ public class PostResponse
     public int CommentsCount { get; set; }
     public int SharesCount { get; set; }
     public bool IsLiked { get; set; }
+    public bool IsFollowingAuthor { get; set; }
+    public bool IsFollowerAuthor { get; set; }
     public PostStatus Status { get; set; }
     public PostResponse? OriginalPost { get; set; }
     public DateTime CreatedAt { get; set; }

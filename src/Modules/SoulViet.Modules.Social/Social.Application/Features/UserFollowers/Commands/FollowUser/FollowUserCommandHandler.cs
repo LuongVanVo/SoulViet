@@ -86,6 +86,7 @@ namespace SoulViet.Modules.Social.Social.Application.Features.UserFollowers.Comm
                 Success = true,
                 Message = "Đã theo dõi.",
                 IsFollowing = true, 
+                IsFollower = await _followerRepository.ExistsAsync(request.FollowingId, request.FollowerId, cancellationToken), 
                 UserId = request.FollowingId,
                 FullName = followingUser?.FullName ?? "Unknown", 
                 AvatarUrl = followingUser?.AvatarUrl

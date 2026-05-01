@@ -3,8 +3,10 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SoulViet.Modules.Social.Social.Application.Features.UserFollowers.Commands.FollowUser;
 using SoulViet.Modules.Social.Social.Application.Features.UserFollowers.Commands.UnfollowUser;
+using SoulViet.Modules.Social.Social.Application.Features.UserFollowers.Commands.RemoveFollower;
 using SoulViet.Modules.Social.Social.Application.Features.UserFollowers.Queries.GetFollowers;
 using SoulViet.Modules.Social.Social.Application.Features.UserFollowers.Queries.GetFollowing;
+using SoulViet.Modules.Social.Social.Application.Features.UserFollowers.Queries.GetFollowStatus;
 using SoulViet.Modules.Social.Social.Presentation.Helpers;
 using Swashbuckle.AspNetCore.Annotations;
 
@@ -50,6 +52,20 @@ namespace SoulViet.Modules.Social.Social.Presentation.Controllers
             return result.Success ? Ok(result) : BadRequest(result);
         }
 
+        [HttpDelete("{followerId:guid}/remove")]
+        [SwaggerOperation(Summary = "Remove follower", Description = "Removes a user from the current user's followers list.")]
+        public async Task<IActionResult> RemoveFollower(Guid followerId, CancellationToken cancellationToken)
+        {
+            var command = new RemoveFollowerCommand
+            {
+                FollowerId = followerId,
+                FollowingId = User.GetCurrentUserId()
+            };
+
+            var result = await _mediator.Send(command, cancellationToken);
+            return result.Success ? Ok(result) : BadRequest(result);
+        }
+
         [HttpGet("{userId:guid}/followers")]
         [SwaggerOperation(Summary = "Get followers", Description = "Retrieves a keyset paginated list of followers for a specific user.")]
         public async Task<IActionResult> GetFollowers(
@@ -88,6 +104,20 @@ namespace SoulViet.Modules.Social.Social.Presentation.Controllers
                 After = after,
                 First = first,
                 SortBy = string.IsNullOrWhiteSpace(sortBy) ? "newest" : sortBy.ToLowerInvariant()
+            };
+
+            var result = await _mediator.Send(query, cancellationToken);
+            return Ok(result);
+        }
+
+        [HttpGet("{followingId:guid}/status")]
+        [SwaggerOperation(Summary = "Get follow status", Description = "Checks if a specific user is being followed by another user.")]
+        public async Task<IActionResult> GetStatus(Guid followingId, [FromQuery] Guid? followerId, CancellationToken cancellationToken)
+        {
+            var query = new GetFollowStatusQuery
+            {
+                FollowerId = followerId ?? User.GetCurrentUserId(),
+                FollowingId = followingId
             };
 
             var result = await _mediator.Send(query, cancellationToken);

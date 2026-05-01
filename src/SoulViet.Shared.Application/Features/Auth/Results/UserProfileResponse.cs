@@ -10,5 +10,7 @@ public class UserProfileResponse
     public int FollowersCount { get; set; }
     public int FollowingCount { get; set; }
     public int PostsCount { get; set; }
+    public bool IsFollowing { get; set; }
+    public bool IsFollower { get; set; }
     public List<string> Roles { get; set; } = new List<string>();
 }

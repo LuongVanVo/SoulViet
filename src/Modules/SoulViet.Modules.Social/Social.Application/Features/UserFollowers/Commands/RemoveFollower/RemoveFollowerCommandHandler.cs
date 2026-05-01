@@ -5,15 +5,15 @@ using SoulViet.Modules.Social.Social.Application.Interfaces.Repositories;
 using SoulViet.Modules.Social.Social.Application.Features.UserFollowers.Results;
 using SoulViet.Shared.Application.Interfaces;
 
-namespace SoulViet.Modules.Social.Social.Application.Features.UserFollowers.Commands.UnfollowUser
+namespace SoulViet.Modules.Social.Social.Application.Features.UserFollowers.Commands.RemoveFollower
 {
-    public class UnfollowUserCommandHandler : IRequestHandler<UnfollowUserCommand, FollowerResponse>
+    public class RemoveFollowerCommandHandler : IRequestHandler<RemoveFollowerCommand, FollowerResponse>
     {
         private readonly IUserFollowerRepository _followerRepository;
         private readonly IUnitOfWork _unitOfWork;
         private readonly ICacheService _cacheService;
 
-        public UnfollowUserCommandHandler(
+        public RemoveFollowerCommandHandler(
             IUserFollowerRepository followerRepository,
             IUnitOfWork unitOfWork,
             ICacheService cacheService)
@@ -23,12 +23,13 @@ namespace SoulViet.Modules.Social.Social.Application.Features.UserFollowers.Comm
             _cacheService = cacheService;
         }
 
-        public async Task<FollowerResponse> Handle(UnfollowUserCommand request, CancellationToken cancellationToken)
+        public async Task<FollowerResponse> Handle(RemoveFollowerCommand request, CancellationToken cancellationToken)
         {
+            // Find the record where FollowerId is the user being removed, and FollowingId is the current user
             var follow = await _followerRepository.GetAsync(request.FollowerId, request.FollowingId, cancellationToken);
             if (follow == null)
             {
-                return new FollowerResponse { Success = true, Message = "Đã bỏ theo dõi người dùng này." };
+                return new FollowerResponse { Success = true, Message = "Người dùng này không còn theo dõi bạn." };
             }
 
             _followerRepository.Remove(follow);
@@ -38,15 +39,15 @@ namespace SoulViet.Modules.Social.Social.Application.Features.UserFollowers.Comm
             var followingKey = $"user:{request.FollowerId}:following";
             var followersKey = $"user:{request.FollowingId}:followers";
 
-            await _cacheService.ZRemoveAsync(followingKey, request.FollowingId, cancellationToken);
-            await _cacheService.ZRemoveAsync(followersKey, request.FollowerId, cancellationToken);
+            await _cacheService.ZRemoveAsync(followingKey, request.FollowingId.ToString(), cancellationToken);
+            await _cacheService.ZRemoveAsync(followersKey, request.FollowerId.ToString(), cancellationToken);
 
             return new FollowerResponse 
             { 
                 Success = true, 
-                Message = "Bỏ theo dõi thành công.",
-                IsFollowing = false,
-                IsFollower = await _followerRepository.ExistsAsync(request.FollowingId, request.FollowerId, cancellationToken)
+                Message = "Gỡ người theo dõi thành công.",
+                IsFollowing = await _followerRepository.ExistsAsync(request.FollowingId, request.FollowerId, cancellationToken),
+                IsFollower = false
             };
         }
     }
