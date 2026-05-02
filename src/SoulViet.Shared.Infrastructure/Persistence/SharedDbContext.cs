@@ -18,6 +18,7 @@ namespace SoulViet.Shared.Infrastructure.Persistence
         public DbSet<RolePermission> RolePermissions { get; set; }
         public DbSet<UserSession> UserSessions { get; set; }
         public DbSet<LocalPartnerProfile> LocalPartnerProfiles { get; set; }
+        public DbSet<UserAddress> UserAddresses { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
