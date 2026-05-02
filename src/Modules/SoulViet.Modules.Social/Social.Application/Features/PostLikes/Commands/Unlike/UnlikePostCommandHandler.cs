@@ -59,7 +59,7 @@ namespace SoulViet.Modules.Social.Social.Application.Features.PostLikes.Commands
                 
                 return result;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 var post = await _postRepository.GetByIdAsync(request.PostId, cancellationToken);
                 return new PostLikeResult(false, post?.LikesCount ?? 0, request.PostId, request.UserId);

@@ -862,6 +862,10 @@ namespace SoulViet.API.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<DateTime?>("ReadAt")
                         .HasColumnType("timestamp with time zone");
 

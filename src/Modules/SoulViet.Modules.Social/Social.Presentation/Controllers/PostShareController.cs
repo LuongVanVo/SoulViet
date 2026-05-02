@@ -52,7 +52,7 @@ public class PostShareController : ControllerBase
         [FromBody] PostShareDto requestDto,
         CancellationToken cancellationToken)
     {
-        var userName = User.Identity?.Name ?? "Anonymous"; 
+        var userName = User.FindFirst("full_name")?.Value ?? User.Identity?.Name ?? "User"; 
         
         var command = new PostShareCommand(
             postId, 

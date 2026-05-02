@@ -73,21 +73,28 @@ namespace SoulViet.Modules.Social.Social.Application.Features.PostLikes.Commands
 
                 var result = new PostLikeResult(true, (int)newCount, request.PostId, request.UserId);
                 
-                // Publish notification event
-                await _publishEndpoint.Publish(new PostLikedEvent
+                var notificationLockKey = $"notif:like:{request.PostId}:{request.UserId}";
+                var alreadyNotified = await _cacheService.GetAsync<bool?>(notificationLockKey, cancellationToken);
+
+                if (alreadyNotified == null)
                 {
-                    PostId = request.PostId,
-                    PostOwnerId = post.UserId,
-                    ActorId = request.UserId,
-                    ActorName = request.UserName,
-                    CreatedAt = DateTime.UtcNow
-                }, cancellationToken);
+                    await _publishEndpoint.Publish(new PostLikedEvent
+                    {
+                        PostId = request.PostId,
+                        PostOwnerId = post.UserId,
+                        ActorId = request.UserId,
+                        ActorName = request.UserName,
+                        CreatedAt = DateTime.UtcNow
+                    }, cancellationToken);
+
+                    // Mark as notified for 2 hours (Sweet spot for intentional re-likes)
+                    await _cacheService.SetAsync(notificationLockKey, true, TimeSpan.FromHours(2), null, cancellationToken);
+                }
 
                 return result;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                // Nếu lỗi do bản ghi Like đã tồn tại (Race condition), trả về kết quả hiện tại
                 var post = await _postRepository.GetByIdAsync(request.PostId, cancellationToken);
                 return new PostLikeResult(true, post?.LikesCount ?? 0, request.PostId, request.UserId);
             }

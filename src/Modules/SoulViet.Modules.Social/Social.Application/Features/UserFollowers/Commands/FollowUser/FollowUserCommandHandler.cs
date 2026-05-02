@@ -72,15 +72,24 @@ namespace SoulViet.Modules.Social.Social.Application.Features.UserFollowers.Comm
             var userIds = new[] { request.FollowerId, request.FollowingId };
             var users = await _userService.GetUsersMinimalInfoAsync(userIds, cancellationToken);
 
-            var followerName = users.ContainsKey(request.FollowerId) ? users[request.FollowerId].FullName : "Anonymous";
+            var followerName = users.ContainsKey(request.FollowerId) ? users[request.FollowerId].FullName : "User";
             var followingUser = users.ContainsKey(request.FollowingId) ? users[request.FollowingId] : null;
-            await _publishEndpoint.Publish(new UserFollowedEvent
+
+            var notificationLockKey = $"notif:follow:{request.FollowerId}:{request.FollowingId}";
+            var alreadyNotified = await _cacheService.GetAsync<bool?>(notificationLockKey, cancellationToken);
+
+            if (alreadyNotified == null)
             {
-                FollowerId = request.FollowerId,
-                FollowerName = followerName,
-                FollowingId = request.FollowingId,
-                CreatedAt = follow.CreatedAt
-            }, cancellationToken);
+                await _publishEndpoint.Publish(new UserFollowedEvent
+                {
+                    FollowerId = request.FollowerId,
+                    FollowerName = followerName,
+                    FollowingId = request.FollowingId,
+                    CreatedAt = follow.CreatedAt
+                }, cancellationToken);
+
+                await _cacheService.SetAsync(notificationLockKey, true, TimeSpan.FromHours(2), null, cancellationToken);
+            }
             return new FollowerResponse
             {
                 Success = true,

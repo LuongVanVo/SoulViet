@@ -52,10 +52,12 @@ namespace SoulViet.Modules.Social.Social.Application.Features.PostShares.Command
             };
             await _postShareRepository.AddAsync(postShare, cancellationToken);
 
+            Post sharedPost = null;
             if (request.ShareType == ShareType.Timeline)
             {
-                var sharedPost = new Post
+                sharedPost = new Post
                 {
+                    Id = Guid.NewGuid(),
                     UserId = request.UserId,
                     Content = request.Caption ?? string.Empty,
                     OriginalPostId = originalPost.OriginalPostId ?? originalPost.Id,
@@ -77,10 +79,16 @@ namespace SoulViet.Modules.Social.Social.Application.Features.PostShares.Command
 
             if (originalPost.UserId != request.UserId)
             {
+                // If it's a timeline share, we want the notification to link to the new post
+                // otherwise we link to the original post
+                var targetPostId = (request.ShareType == ShareType.Timeline && sharedPost != null) 
+                    ? sharedPost.Id 
+                    : request.PostId;
+
                 await _publishEndpoint.Publish(new PostSharedEvent
                 {
                     PostId = request.PostId,
-                    ShareId = postShare.Id,
+                    ShareId = targetPostId,
                     PostOwnerId = originalPost.UserId,
                     ActorId = request.UserId,
                     ActorName = request.UserName,
