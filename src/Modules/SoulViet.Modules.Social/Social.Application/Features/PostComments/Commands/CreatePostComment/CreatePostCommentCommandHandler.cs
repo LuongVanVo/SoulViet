@@ -22,6 +22,7 @@ namespace SoulViet.Modules.Social.Social.Application.Features.PostComments.Comma
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
         private readonly ICommentEventService _commentEventService;
+        private readonly MassTransit.IPublishEndpoint _publishEndpoint;
 
         public CreatePostCommentCommandHandler(
             IPostRepository postRepository,
@@ -29,7 +30,8 @@ namespace SoulViet.Modules.Social.Social.Application.Features.PostComments.Comma
             IUserService userService,
             IUnitOfWork unitOfWork,
             IMapper mapper,
-            ICommentEventService commentEventService)
+            ICommentEventService commentEventService,
+            MassTransit.IPublishEndpoint publishEndpoint)
         {
             _postRepository = postRepository;
             _commentRepository = commentRepository;
@@ -37,6 +39,7 @@ namespace SoulViet.Modules.Social.Social.Application.Features.PostComments.Comma
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _commentEventService = commentEventService;
+            _publishEndpoint = publishEndpoint;
         }
         public async Task<PostCommentResponse> Handle(CreatePostCommentCommand request, CancellationToken cancellationToken)
         {
@@ -69,10 +72,8 @@ namespace SoulViet.Modules.Social.Social.Application.Features.PostComments.Comma
             await _commentRepository.AddAsync(commentEntity, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            // Update count atomically
             await _postRepository.UpdateCommentsCountAsync(request.PostId, 1, cancellationToken);
             
-            // Reload post to get the latest count for the event
             var post = await _postRepository.GetByIdAsync(request.PostId, cancellationToken);
 
             var userIds = new List<Guid> { request.UserId };
@@ -87,11 +88,20 @@ namespace SoulViet.Modules.Social.Social.Application.Features.PostComments.Comma
             }
             else
             {
-                response.FullName = "Anonymous user";
+                response.FullName = "User";
             }
 
             var eventPayload = CommentStreamEvent.Created(response, post?.CommentsCount ?? 0);
             await _commentEventService.PublishCommentAsync(request.PostId, eventPayload, cancellationToken);
+
+            await _publishEndpoint.Publish(new SoulViet.Shared.Application.Common.Events.PostCommentedEvent
+            {
+                PostId = request.PostId,
+                PostOwnerId = post?.UserId ?? Guid.Empty,
+                ActorId = request.UserId,
+                ActorName = response.FullName,
+                CreatedAt = DateTime.UtcNow
+            }, cancellationToken);
 
             return response;
         }

@@ -37,6 +37,7 @@ namespace SoulViet.Modules.Social.Social.Infrastructure
             services.AddScoped<IPostShareRepository, PostShareRepository>();
             services.AddScoped<IComboExperienceRepository, ComboExperienceRepository>();
             services.AddScoped<IUserFollowerRepository, UserFollowerRepository>();
+            services.AddScoped<INotificationRepository, NotificationRepository>();
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<IUnitOfWork, UnitOfWork>();
             services.AddScoped<INotificationService, NotificationService>();

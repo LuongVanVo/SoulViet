@@ -29,7 +29,7 @@ public class PostLikeController : ControllerBase
         [FromRoute] Guid postId,
         CancellationToken cancellationToken)
     {
-        var userName = User.Identity?.Name ?? "Anonymous"; 
+        var userName = User.FindFirst("full_name")?.Value ?? User.Identity?.Name ?? "User"; 
         var command = new LikePostCommand(postId, User.GetCurrentUserId(), userName);
         
         var result = await _mediator.Send(command, cancellationToken);

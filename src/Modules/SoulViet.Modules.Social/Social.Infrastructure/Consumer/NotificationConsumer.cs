@@ -6,15 +6,11 @@ using SoulViet.Modules.Social.Social.Application.Interfaces.Repositories;
 
 namespace SoulViet.Modules.Social.Social.Infrastructure.Consumer
 {
-    /// <summary>
-    /// Consumes PostLikedEvent and PostSharedEvent from RabbitMQ.
-    /// Sends real-time SignalR notifications to the post owner via INotificationService.
-    /// This decouples the notification logic from the Like/Share handlers.
-    /// </summary>
     public class NotificationConsumer :
         IConsumer<PostLikedEvent>,
         IConsumer<PostSharedEvent>,
-        IConsumer<UserFollowedEvent>
+        IConsumer<UserFollowedEvent>,
+        IConsumer<PostCommentedEvent>
     {
         private readonly INotificationService _notificationService;
 
@@ -26,55 +22,62 @@ namespace SoulViet.Modules.Social.Social.Infrastructure.Consumer
         public async Task Consume(ConsumeContext<PostLikedEvent> context)
         {
             var message = context.Message;
-            var notification = new
-            {
-                Type = "Like",
-                ActorId = message.ActorId,
-                ActorName = message.ActorName,
-                Message = $"{message.ActorName} đã thích bài viết của bạn.",
-                PostId = message.PostId,
-                CreatedAt = message.CreatedAt
-            };
+            string notifMessage = $"{message.ActorName} đã thích bài viết của bạn.";
 
-            await _notificationService.SendNotificationToUserAsync(message.PostOwnerId, notification);
+            await _notificationService.SendNotificationAsync(
+                message.PostOwnerId,
+                message.ActorId,
+                NotificationType.Liked,
+                NotificationTargetType.Post,
+                message.PostId,
+                notifMessage,
+                context.CancellationToken);
         }
 
         public async Task Consume(ConsumeContext<PostSharedEvent> context)
         {
             var message = context.Message;
 
-            string notifMessage = string.IsNullOrWhiteSpace(message.Caption)
-                ? $"{message.ActorName} đã chia sẻ bài viết của bạn."
-                : $"{message.ActorName} đã chia sẻ bài viết của bạn: \"{message.Caption}\"";
-
-            var notification = new
-            {
-                Type = "Share",
-                ActorId = message.ActorId,
-                ActorName = message.ActorName,
-                Message = notifMessage,
-                PostId = message.PostId,
-                ShareId = message.ShareId,
-                ShareType = message.ShareType.ToString(),
-                CreatedAt = message.CreatedAt
-            };
-
-            await _notificationService.SendNotificationToUserAsync(message.PostOwnerId, notification);
+            string notifMessage = $"{message.ActorName} đã chia sẻ bài viết của bạn.";
+              
+            await _notificationService.SendNotificationAsync(
+                message.PostOwnerId,
+                message.ActorId,
+                NotificationType.Shared,
+                NotificationTargetType.Post,
+                message.ShareId,
+                notifMessage,
+                context.CancellationToken);
         }
 
         public async Task Consume(ConsumeContext<UserFollowedEvent> context)
         {
             var message = context.Message;
-            var notification = new
-            {
-                Type = "Follow",
-                ActorId = message.FollowerId,
-                ActorName = message.FollowerName,
-                Message = $"{message.FollowerName} đã bắt đầu theo dõi bạn.",
-                CreatedAt = message.CreatedAt
-            };
+            string notifMessage = $"{message.FollowerName} đã bắt đầu theo dõi bạn.";
 
-            await _notificationService.SendNotificationToUserAsync(message.FollowingId, notification);
+            await _notificationService.SendNotificationAsync(
+                message.FollowingId,
+                message.FollowerId,
+                NotificationType.Followed,
+                NotificationTargetType.User,
+                message.FollowerId,
+                notifMessage,
+                context.CancellationToken);
+        }
+
+        public async Task Consume(ConsumeContext<PostCommentedEvent> context)
+        {
+            var message = context.Message;
+            string notifMessage = $"{message.ActorName} đã bình luận về bài viết của bạn.";
+
+            await _notificationService.SendNotificationAsync(
+                message.PostOwnerId,
+                message.ActorId,
+                NotificationType.Commented,
+                NotificationTargetType.Post,
+                message.PostId,
+                notifMessage,
+                context.CancellationToken);
         }
     }
 }
