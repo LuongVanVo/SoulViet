@@ -14,4 +14,5 @@ public class UserProfileResponse
     public bool IsFollower { get; set; }
     public bool IsLocalPartner { get; set; }
     public List<string> Roles { get; set; } = new List<string>();
+    public int SoulCoinBalance { get; set; }
 }

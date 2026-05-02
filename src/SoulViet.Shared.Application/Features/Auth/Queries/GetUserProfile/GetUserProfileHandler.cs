@@ -28,7 +28,10 @@ public class GetUserProfileHandler : IRequestHandler<GetUserProfileQuery, UserPr
             Id = user.Id,
             Email = user.Email,
             FullName = user.FullName,
-            Roles = roles
+            Roles = roles,
+            AvatarUrl = user.AvatarUrl,
+            Bio = user.Bio,
+            SoulCoinBalance = user.SoulCoinBalance
         };
     }
 }
