@@ -77,6 +77,7 @@ builder.Services.AddSignalR()
 builder.Services.AddSharedInfrastructure(builder.Configuration, x => 
 {
     x.AddConsumer<NotificationConsumer>();
+    x.AddConsumer<ChatMessageConsumer>();
 });
 builder.Services.AddSocialModule(builder.Configuration);
 builder.Services.AddMarketplaceModule(builder.Configuration);

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Text;
@@ -18,6 +18,8 @@ namespace SoulViet.Shared.Domain.Enums
         [Description("Chia sẻ bài viết")]
         Shared = 5,
         [Description("Tài khoản đã được xác minh")]
-        PartnerVerified = 6
+        PartnerVerified = 6,
+        [Description("Tin nhắn mới")]
+        Message = 7
     }
 }
