@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Text;
@@ -16,6 +16,8 @@ namespace SoulViet.Shared.Domain.Enums
         [Description("User")]
         User = 3,
         [Description("Follow")]
-        Follow = 4
+        Follow = 4,
+        [Description("Message")]
+        Message = 5
     }
 }

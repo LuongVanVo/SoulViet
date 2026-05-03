@@ -834,6 +834,108 @@ namespace SoulViet.API.Migrations
                     b.ToTable("Vouchers", "marketplace");
                 });
 
+            modelBuilder.Entity("SoulViet.Modules.Social.Social.Domain.Entities.Conversation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("LastMessageAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("LastModifiedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("LastModifiedBy")
+                        .HasColumnType("text");
+
+                    b.Property<Guid?>("LastReadMessageIdA")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("LastReadMessageIdB")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("UserAId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("UserBId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LastReadMessageIdA");
+
+                    b.HasIndex("LastReadMessageIdB");
+
+                    b.HasIndex("UserAId", "UserBId")
+                        .IsUnique();
+
+                    b.ToTable("Conversations", "social", t =>
+                        {
+                            t.HasCheckConstraint("CK_Conversation_UserOrder", "\"UserAId\" < \"UserBId\"");
+                        });
+                });
+
+            modelBuilder.Entity("SoulViet.Modules.Social.Social.Domain.Entities.Message", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ClientTempId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Content")
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("ConversationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("LastModifiedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("LastModifiedBy")
+                        .HasColumnType("text");
+
+                    b.Property<string>("MediaUrl")
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("SenderId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ConversationId", "ClientTempId")
+                        .IsUnique();
+
+                    b.HasIndex("ConversationId", "CreatedAt")
+                        .IsDescending(false, true);
+
+                    b.ToTable("Messages", "social");
+                });
+
             modelBuilder.Entity("SoulViet.Modules.Social.Social.Domain.Entities.Notification", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2012,6 +2114,34 @@ namespace SoulViet.API.Migrations
                     b.Navigation("Product");
                 });
 
+            modelBuilder.Entity("SoulViet.Modules.Social.Social.Domain.Entities.Conversation", b =>
+                {
+                    b.HasOne("SoulViet.Modules.Social.Social.Domain.Entities.Message", "LastReadMessageA")
+                        .WithMany()
+                        .HasForeignKey("LastReadMessageIdA")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("SoulViet.Modules.Social.Social.Domain.Entities.Message", "LastReadMessageB")
+                        .WithMany()
+                        .HasForeignKey("LastReadMessageIdB")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("LastReadMessageA");
+
+                    b.Navigation("LastReadMessageB");
+                });
+
+            modelBuilder.Entity("SoulViet.Modules.Social.Social.Domain.Entities.Message", b =>
+                {
+                    b.HasOne("SoulViet.Modules.Social.Social.Domain.Entities.Conversation", "Conversation")
+                        .WithMany("Messages")
+                        .HasForeignKey("ConversationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Conversation");
+                });
+
             modelBuilder.Entity("SoulViet.Modules.Social.Social.Domain.Entities.Post", b =>
                 {
                     b.HasOne("SoulViet.Modules.Social.Social.Domain.Entities.Post", "OriginalPost")
@@ -2261,6 +2391,11 @@ namespace SoulViet.API.Migrations
             modelBuilder.Entity("SoulViet.Modules.Marketplace.Marketplace.Domain.Entities.PayoutBatch", b =>
                 {
                     b.Navigation("OrderItems");
+                });
+
+            modelBuilder.Entity("SoulViet.Modules.Social.Social.Domain.Entities.Conversation", b =>
+                {
+                    b.Navigation("Messages");
                 });
 
             modelBuilder.Entity("SoulViet.Modules.Social.Social.Domain.Entities.Post", b =>
