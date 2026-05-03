@@ -3,13 +3,14 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SoulViet.Modules.Social.Social.Application.Features.PostLikes.Commands.Like;
 using SoulViet.Modules.Social.Social.Application.Features.PostLikes.Commands.Unlike;
+using SoulViet.Modules.Social.Social.Application.Features.PostLikes.Queries.GetPostLikers;
 using SoulViet.Modules.Social.Social.Presentation.Helpers;
 using Swashbuckle.AspNetCore.Annotations;
 
 namespace SoulViet.Modules.Social.Social.Presentation.Controllers;
 
 [ApiController]
-[Route("api/posts")]
+[Route("api/Post")]
 [Authorize]
 public class PostLikeController : ControllerBase
 {
@@ -48,6 +49,38 @@ public class PostLikeController : ControllerBase
         var command = new UnlikePostCommand(postId, User.GetCurrentUserId());
         
         var result = await _mediator.Send(command, cancellationToken);
+        return Ok(result);
+    }
+
+    [HttpGet("{postId:guid}/likers")]
+    [AllowAnonymous]
+    [SwaggerOperation(
+        Summary = "Get post likers (Paginated)",
+        Description = "Retrieves a keyset paginated list of users who liked a specific post."
+    )]
+    public async Task<IActionResult> GetLikers(
+        [FromRoute] Guid postId,
+        [FromQuery] string? after,
+        [FromQuery] int first = 20,
+        CancellationToken cancellationToken = default)
+    {
+        Guid? currentUserId = null;
+        if (User.Identity?.IsAuthenticated == true)
+        {
+            currentUserId = User.GetCurrentUserId();
+        }
+
+        var query = new GetPostLikersQuery
+        {
+            PostId = postId,
+            CurrentUserId = currentUserId,
+            After = after,
+            First = first
+        };
+        var result = await _mediator.Send(query, cancellationToken);
+
+        if (result == null)
+            return NotFound(new { message = "Post not found" });
         return Ok(result);
     }
 }
