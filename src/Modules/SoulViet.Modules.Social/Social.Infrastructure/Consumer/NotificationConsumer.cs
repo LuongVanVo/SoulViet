@@ -22,6 +22,8 @@ namespace SoulViet.Modules.Social.Social.Infrastructure.Consumer
         public async Task Consume(ConsumeContext<PostLikedEvent> context)
         {
             var message = context.Message;
+            if (message.PostOwnerId == message.ActorId) return;
+
             string notifMessage = $"{message.ActorName} đã thích bài viết của bạn.";
 
             await _notificationService.SendNotificationAsync(
@@ -37,6 +39,7 @@ namespace SoulViet.Modules.Social.Social.Infrastructure.Consumer
         public async Task Consume(ConsumeContext<PostSharedEvent> context)
         {
             var message = context.Message;
+            if (message.PostOwnerId == message.ActorId) return;
 
             string notifMessage = $"{message.ActorName} đã chia sẻ bài viết của bạn.";
               
@@ -53,6 +56,8 @@ namespace SoulViet.Modules.Social.Social.Infrastructure.Consumer
         public async Task Consume(ConsumeContext<UserFollowedEvent> context)
         {
             var message = context.Message;
+            if (message.FollowingId == message.FollowerId) return;
+
             string notifMessage = $"{message.FollowerName} đã bắt đầu theo dõi bạn.";
 
             await _notificationService.SendNotificationAsync(
@@ -68,6 +73,8 @@ namespace SoulViet.Modules.Social.Social.Infrastructure.Consumer
         public async Task Consume(ConsumeContext<PostCommentedEvent> context)
         {
             var message = context.Message;
+            if (message.PostOwnerId == message.ActorId) return;
+
             string notifMessage = $"{message.ActorName} đã bình luận về bài viết của bạn.";
 
             await _notificationService.SendNotificationAsync(

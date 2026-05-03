@@ -25,7 +25,6 @@ namespace SoulViet.Modules.Social.Social.Application.Features.UserFollowers.Comm
 
         public async Task<FollowerResponse> Handle(RemoveFollowerCommand request, CancellationToken cancellationToken)
         {
-            // Find the record where FollowerId is the user being removed, and FollowingId is the current user
             var follow = await _followerRepository.GetAsync(request.FollowerId, request.FollowingId, cancellationToken);
             if (follow == null)
             {
@@ -35,7 +34,6 @@ namespace SoulViet.Modules.Social.Social.Application.Features.UserFollowers.Comm
             _followerRepository.Remove(follow);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            // Update Cache
             var followingKey = $"user:{request.FollowerId}:following";
             var followersKey = $"user:{request.FollowingId}:followers";
 
