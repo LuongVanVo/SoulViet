@@ -68,6 +68,7 @@ namespace SoulViet.Shared.Infrastructure
                 x.AddConsumer<UserOrderCreatedConsumer>();
                 x.AddConsumer<PartnerOrderCreatedConsumer>();
                 x.AddConsumer<OrderPaymentSuccessConsumer>();
+                x.AddConsumer<SoulCoinConsumer>();
 
                 // Allow other modules to register their consumers
                 additionalBusConfig?.Invoke(x);

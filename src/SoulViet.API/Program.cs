@@ -10,6 +10,7 @@ using SoulViet.Shared.Infrastructure;
 using SoulViet.Modules.Social.Social.Infrastructure;
 using SoulViet.Modules.Social.Social.Infrastructure.Consumer;
 using SoulViet.Modules.Marketplace.Marketplace.Infrastructure;
+using SoulViet.Modules.Marketplace.Marketplace.Infrastructure.Consumer;
 using SoulViet.Modules.SoulMap.SoulMap.Infrastructure;
 using SoulViet.API;
 using Microsoft.EntityFrameworkCore;
@@ -78,6 +79,7 @@ builder.Services.AddSharedInfrastructure(builder.Configuration, x =>
 {
     x.AddConsumer<NotificationConsumer>();
     x.AddConsumer<ChatMessageConsumer>();
+    x.AddConsumer<SocialQuestEventConsumer>();
 });
 builder.Services.AddSocialModule(builder.Configuration);
 builder.Services.AddMarketplaceModule(builder.Configuration);

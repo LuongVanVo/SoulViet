@@ -1,3 +1,4 @@
+using MassTransit;
 using MediatR;
 using SoulViet.Modules.Social.Social.Application.Exceptions;
 using SoulViet.Modules.Social.Social.Application.Features.Posts.Results;
@@ -5,6 +6,7 @@ using SoulViet.Modules.Social.Social.Application.Interfaces;
 using SoulViet.Modules.Social.Social.Application.Interfaces.Services;
 using SoulViet.Modules.Social.Social.Application.Interfaces.Repositories;
 using SoulViet.Shared.Application.Interfaces;
+using SoulViet.Shared.Application.Common.Events;
 
 namespace SoulViet.Modules.Social.Social.Application.Features.Posts.Commands.DeletePost;
 
@@ -13,17 +15,20 @@ public class DeletePostCommandHandler : IRequestHandler<DeletePostCommand, Delet
     private readonly IPostRepository _postRepository;
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICacheService _cacheService;
+    private readonly IPublishEndpoint _publishEndpoint;
 
     private static string SharesKey(Guid postId) => $"post:shares:{postId}";
 
     public DeletePostCommandHandler(
         IPostRepository postRepository, 
         IUnitOfWork unitOfWork,
-        ICacheService cacheService)
+        ICacheService cacheService,
+        IPublishEndpoint publishEndpoint)
     {
         _postRepository = postRepository;
         _unitOfWork = unitOfWork;
         _cacheService = cacheService;
+        _publishEndpoint = publishEndpoint;
     }
 
     public async Task<DeletePostResponse> Handle(DeletePostCommand request, CancellationToken cancellationToken)
@@ -55,6 +60,13 @@ public class DeletePostCommandHandler : IRequestHandler<DeletePostCommand, Delet
         }
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        await _publishEndpoint.Publish(new PostDeletedEvent
+        {
+            PostId = post.Id,
+            UserId = post.UserId,
+            DeletedAt = DateTime.UtcNow
+        }, cancellationToken);
 
         return new DeletePostResponse
         {
