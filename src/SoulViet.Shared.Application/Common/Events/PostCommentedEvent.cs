@@ -8,5 +8,6 @@ public class PostCommentedEvent
     public Guid PostOwnerId { get; set; }
     public Guid ActorId { get; set; }
     public string ActorName { get; set; } = string.Empty;
+    public string Content { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 }

@@ -42,6 +42,7 @@ namespace SoulViet.Modules.Social.Social.Infrastructure
             services.AddScoped<IUnitOfWork, UnitOfWork>();
             services.AddScoped<INotificationService, NotificationService>();
             services.AddScoped<ISoulMapService, SoulMapService>();
+            services.AddScoped<ISocialQuestService, SocialQuestService>();
 
             services.AddSingleton<SseConnectionManager>();
             services.AddSingleton<PostCommentEventService>();

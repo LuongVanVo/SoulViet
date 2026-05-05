@@ -100,6 +100,7 @@ namespace SoulViet.Modules.Social.Social.Application.Features.PostComments.Comma
                 PostOwnerId = post?.UserId ?? Guid.Empty,
                 ActorId = request.UserId,
                 ActorName = response.FullName,
+                Content = request.Content,
                 CreatedAt = DateTime.UtcNow
             }, cancellationToken);
 

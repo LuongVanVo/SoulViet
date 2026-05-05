@@ -10,7 +10,9 @@ namespace SoulViet.Modules.Social.Social.Infrastructure.Consumer
         IConsumer<PostLikedEvent>,
         IConsumer<PostSharedEvent>,
         IConsumer<UserFollowedEvent>,
-        IConsumer<PostCommentedEvent>
+        IConsumer<PostCommentedEvent>,
+        IConsumer<SoulCoinEarnedEvent>,
+        IConsumer<SoulCoinDeductedEvent>
     {
         private readonly INotificationService _notificationService;
 
@@ -83,6 +85,38 @@ namespace SoulViet.Modules.Social.Social.Infrastructure.Consumer
                 NotificationType.Commented,
                 NotificationTargetType.Post,
                 message.PostId,
+                notifMessage,
+                context.CancellationToken);
+        }
+
+        public async Task Consume(ConsumeContext<SoulCoinEarnedEvent> context)
+        {
+            var message = context.Message;
+
+            string notifMessage = $"Bạn đã nhận được +{message.Amount} SoulCoin: {message.Description}.";
+
+            await _notificationService.SendNotificationAsync(
+                message.UserId,
+                Guid.Empty, // System actor
+                NotificationType.SystemReward,
+                NotificationTargetType.None,
+                null,
+                notifMessage,
+                context.CancellationToken);
+        }
+
+        public async Task Consume(ConsumeContext<SoulCoinDeductedEvent> context)
+        {
+            var message = context.Message;
+
+            string notifMessage = $"Bạn đã bị trừ {message.Amount} SoulCoin: {message.Description}.";
+
+            await _notificationService.SendNotificationAsync(
+                message.UserId,
+                Guid.Empty, // System actor
+                NotificationType.SystemReward,
+                NotificationTargetType.None,
+                null,
                 notifMessage,
                 context.CancellationToken);
         }

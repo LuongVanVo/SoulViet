@@ -20,6 +20,8 @@ namespace SoulViet.Shared.Domain.Enums
         [Description("Tài khoản đã được xác minh")]
         PartnerVerified = 6,
         [Description("Tin nhắn mới")]
-        Message = 7
+        Message = 7,
+        [Description("Nhận thưởng hệ thống")]
+        SystemReward = 8
     }
 }

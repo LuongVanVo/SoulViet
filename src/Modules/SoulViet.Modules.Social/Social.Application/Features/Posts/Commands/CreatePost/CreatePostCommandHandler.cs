@@ -1,4 +1,5 @@
 using AutoMapper;
+using MassTransit;
 using MediatR;
 using SoulViet.Modules.Social.Social.Application.Features.Posts.Results;
 using SoulViet.Modules.Social.Social.Application.Interfaces;
@@ -7,6 +8,7 @@ using SoulViet.Modules.Social.Social.Application.Interfaces.Repositories;
 using SoulViet.Modules.Social.Social.Domain.Entities;
 using SoulViet.Shared.Domain.Enums;
 using SoulViet.Modules.Social.Social.Domain.Enums;
+using SoulViet.Shared.Application.Common.Events;
 
 namespace SoulViet.Modules.Social.Social.Application.Features.Posts.Commands.CreatePost;
 
@@ -16,13 +18,15 @@ public class CreatePostCommandHandler : IRequestHandler<CreatePostCommand, PostR
     private readonly IUserService _userService;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMapper _mapper;
+    private readonly IPublishEndpoint _publishEndpoint;
 
-    public CreatePostCommandHandler(IPostRepository postRepository, IUserService userService, IUnitOfWork unitOfWork, IMapper mapper)
+    public CreatePostCommandHandler(IPostRepository postRepository, IUserService userService, IUnitOfWork unitOfWork, IMapper mapper, IPublishEndpoint publishEndpoint)
     {
         _postRepository = postRepository;
         _userService = userService;
         _unitOfWork = unitOfWork;
         _mapper = mapper;
+        _publishEndpoint = publishEndpoint;
     }
 
     public async Task<PostResponse> Handle(CreatePostCommand request, CancellationToken cancellationToken)
@@ -64,6 +68,15 @@ public class CreatePostCommandHandler : IRequestHandler<CreatePostCommand, PostR
             response.AuthorName = userInfo.FullName;
             response.AvatarUrl = userInfo.AvatarUrl;
         }
+
+        await _publishEndpoint.Publish(new PostCreatedEvent
+        {
+            PostId = post.Id,
+            UserId = post.UserId,
+            HasVibeTag = post.VibeTag != 0,
+            HasCheckinLocation = post.CheckinLocationId.HasValue,
+            CreatedAt = post.CreatedAt
+        }, cancellationToken);
 
         response.Success = true;
         response.Message = "Post created successfully.";
