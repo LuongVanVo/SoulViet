@@ -1,4 +1,6 @@
-﻿using SoulViet.Modules.Marketplace.Marketplace.Domain.Entities;
+﻿using SoulViet.Modules.Marketplace.Marketplace.Application.DTOs;
+using SoulViet.Modules.Marketplace.Marketplace.Application.Features.Orders.Common;
+using SoulViet.Modules.Marketplace.Marketplace.Domain.Entities;
 
 namespace SoulViet.Modules.Marketplace.Marketplace.Application.Interfaces.Repositories;
 
@@ -20,4 +22,10 @@ public interface IOrderItemRepository
 
     // Cập nhật danh sách các món hàng đã được đối soát (đánh dấu IsSettled = true và gán PayoutBatchId) sau khi tạo PayoutBatch
     void UpdateRange(IEnumerable<OrderItem> orderItems);
+
+    // Lấy vé của người dùng với phân trang và lọc theo trạng thái (tất cả, đã sử dụng, chưa sử dụng)
+    Task<(List<MyTicketDto> Items, int TotalCount)> GetUserTicketsWithPaginationAsync(Guid userId, TicketStatusFilter status, int pageNumber, int pageSize, CancellationToken cancellationToken = default);
+
+    // Lấy chi tiết một vé của người dùng, bao gồm thông tin đơn hàng và sản phẩm
+    Task<MyTicketDetailDto?> GetUserTicketDetailAsync(Guid userId, Guid orderItemId, CancellationToken cancellationToken = default);
 }

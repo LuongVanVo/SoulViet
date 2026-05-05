@@ -30,7 +30,7 @@ public class OrderProfile : Profile
             .ForMember(dest => dest.ShopNames,
                 opt => opt.MapFrom(src => src.VendorOrders.Select(vo => vo.PartnerId.ToString()).ToList()))
             .ForMember(dest => dest.TotalAmount,
-                opt => opt.MapFrom(src => src.GrandTotal))
+                opt => opt.MapFrom(src => src.FinalPayableAmount))
             .ForMember(dest => dest.CreatedDate,
                 opt => opt.MapFrom(src => src.CreatedAt));
 
