@@ -77,6 +77,19 @@ public class CreateOrderHandler(
             foreach (var group in groupedItems)
             {
                 var partnerId = group.Key;
+
+                var noteForThisShop = string.Empty;
+                if (request.ShopOrderNotes != null &&
+                    request.ShopOrderNotes.TryGetValue(partnerId, out var rawShopNote) &&
+                    !string.IsNullOrWhiteSpace(rawShopNote))
+                {
+                    noteForThisShop = rawShopNote.Trim();
+                }
+                else if (!string.IsNullOrWhiteSpace(request.OrderNotes))
+                {
+                    noteForThisShop = request.OrderNotes.Trim();
+                }
+
                 var vendorOrder = new Order
                 {
                     Id = Guid.NewGuid(),
@@ -86,7 +99,7 @@ public class CreateOrderHandler(
                     ReceiverName = request.ReceiverName,
                     ReceiverPhone = request.ReceiverPhone,
                     ShippingAddress = request.ShippingAddress,
-                    OrderNotes = request.OrderNotes,
+                    OrderNotes = noteForThisShop,
                     Status = OrderStatus.Pending,
                     TotalAmount = 0,
                     OrderItems = new List<OrderItem>()

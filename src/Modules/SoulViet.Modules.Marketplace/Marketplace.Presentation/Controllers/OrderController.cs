@@ -6,9 +6,12 @@ using SoulViet.Modules.Marketplace.Marketplace.Application.Features.Orders.Comma
 using SoulViet.Modules.Marketplace.Marketplace.Application.Features.Orders.Commands.ProcessVnPayIpn;
 using SoulViet.Modules.Marketplace.Marketplace.Application.Features.Orders.Commands.ScanTicket;
 using SoulViet.Modules.Marketplace.Marketplace.Application.Features.Orders.Commands.UpdateOrderStatus;
+using SoulViet.Modules.Marketplace.Marketplace.Application.Features.Orders.Common;
 using SoulViet.Modules.Marketplace.Marketplace.Application.Features.Orders.Queries.GetAdminMasterOrderDetail;
 using SoulViet.Modules.Marketplace.Marketplace.Application.Features.Orders.Queries.GetAllOrdersForAdmin;
 using SoulViet.Modules.Marketplace.Marketplace.Application.Features.Orders.Queries.GetMasterOrderDetail;
+using SoulViet.Modules.Marketplace.Marketplace.Application.Features.Orders.Queries.GetMyTicketDetail;
+using SoulViet.Modules.Marketplace.Marketplace.Application.Features.Orders.Queries.GetMyTickets;
 using SoulViet.Modules.Marketplace.Marketplace.Application.Features.Orders.Queries.GetOrderHistory;
 using SoulViet.Modules.Marketplace.Marketplace.Application.Features.Orders.Queries.GetRepayUrl;
 using SoulViet.Modules.Marketplace.Marketplace.Application.Features.Orders.Queries.GetShopOrders;
@@ -91,12 +94,21 @@ public class OrderController : ControllerBase
         var vnp_OrderInfo = Request.Query["vnp_OrderInfo"].ToString();
         var vnp_TransactionStatus = Request.Query["vnp_TransactionStatus"].ToString();
 
+        // FE base URL (set env in prod), fallback local
+        var frontendBaseUrl = Environment.GetEnvironmentVariable("FRONTEND_BASE_URL")
+                              ?? "http://localhost:5173";
+
         if (vnp_TxnRef.StartsWith("SPLIT-"))
         {
             var parts = vnp_TxnRef.Split('-');
             var roomId = parts[1];
 
-            return Redirect($"http://localhost:3000/split-payment/room/{roomId}?responseCode={vnp_ResponseCode}&transactionNo={vnp_TransactionNo}&orderInfo={Uri.EscapeDataString(vnp_OrderInfo)}&transactionStatus={vnp_TransactionStatus}");
+            return Redirect(
+                $"{frontendBaseUrl}/split-payment/room/{roomId}" +
+                $"?responseCode={Uri.EscapeDataString(vnp_ResponseCode)}" +
+                $"&transactionNo={Uri.EscapeDataString(vnp_TransactionNo)}" +
+                $"&orderInfo={Uri.EscapeDataString(vnp_OrderInfo)}" +
+                $"&transactionStatus={Uri.EscapeDataString(vnp_TransactionStatus)}");
         }
 
         var orderId = vnp_TxnRef.Split('_')[0];
@@ -114,16 +126,11 @@ public class OrderController : ControllerBase
             TransactionStatus = vnp_TransactionStatus,
             Description = vnp_OrderInfo,
             RedirectUrl = vnp_ResponseCode == "00"
-                ? $"http://localhost:3000/checkout/success?orderId={orderId}"
-                : $"http://localhost:3000/checkout/failed?orderId={orderId}&error={vnp_ResponseCode}"
+                ? $"{frontendBaseUrl}/checkout/success?orderId={Uri.EscapeDataString(orderId)}"
+                : $"{frontendBaseUrl}/checkout/failed?orderId={Uri.EscapeDataString(orderId)}&error={Uri.EscapeDataString(vnp_ResponseCode)}"
         };
-        return Ok(result);
 
-        // if (vnp_ResponseCode == "00")
-        // {
-        //     return Redirect($"http://localhost:3000/checkout/success?orderId={orderId}");
-        // }
-        // return Redirect($"http://localhost:3000/checkout/failed?orderId={orderId}");
+        return Redirect(result.RedirectUrl);
     }
 
     [HttpGet("history")]
@@ -266,6 +273,41 @@ public class OrderController : ControllerBase
         command.PartnerId = partnerId;
 
         var result = await _mediator.Send(command);
+        return Ok(result);
+    }
+
+    [Authorize]
+    [HttpGet("my-ticket")]
+    [SwaggerOperation(Summary = "Get my tickets",
+        Description =
+            "Retrieves a list of service orders (tickets) for the currently authenticated user, allowing them to view and manage their active and past service orders.")]
+    public async Task<IActionResult> GetMyTickets(
+        [FromQuery] TicketStatusFilter status = TicketStatusFilter.All,
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 10,
+        CancellationToken cancellationToken = default)
+    {
+        var result = await _mediator.Send(new GetMyTicketsQuery
+        {
+            UserId = User.GetCurrentUserId(),
+            Status = status,
+            PageNumber = pageNumber,
+            PageSize = pageSize
+        }, cancellationToken);
+        return Ok(result);
+    }
+
+    [HttpGet("my-ticket/{orderItemId:guid}")]
+    [SwaggerOperation(Summary = "Get my ticket details",
+        Description =
+            "Retrieves the details of a specific service order (ticket) by its ID for the currently authenticated user, allowing them to view information about their service orders, such as the service details, usage status, and any associated information.")]
+    public async Task<IActionResult> GetMyTicketDetail([FromRoute] Guid orderItemId, CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new GetMyTicketDetailQuery()
+        {
+            UserId = User.GetCurrentUserId(),
+            OrderItemId = orderItemId
+        }, cancellationToken);
         return Ok(result);
     }
 }

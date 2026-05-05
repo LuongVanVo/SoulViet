@@ -12,8 +12,9 @@ public class CreateOrderCommand : IRequest<CreateOrderResponse>
     public string ReceiverPhone { get; set; } = string.Empty;
     public string ReceiverEmail { get; set; } = string.Empty;
     public string ShippingAddress { get; set; } = string.Empty;
-    public string OrderNotes { get; set; } = string.Empty;
+    public string? OrderNotes { get; set; }
 
+    public Dictionary<Guid, string>? ShopOrderNotes { get; set; } = new();
     public List<Guid> SelectedCartItemIds { get; set; } = new();
     public string? PlatformVoucherCode { get; set; }
     public Dictionary<Guid, string> ShopVoucherCodes { get; set; } = new();
